@@ -9,7 +9,7 @@ etcd-defrag reuses all the existing flags accepted by `etcdctl defrag`, so basic
 any existing user experience. Users can just replace `etcdctl defrag [flags]` with `etcd-defrag [flags]`
 without compromising any experience.
 
-It adds one more flag `--continue-on-error`. When true, etcd-defrag continues to defragment next endpoint
+It adds one more flag `--continue-on-error`. When true (default), etcd-defrag continues to defragment next endpoint
 if current one somehow fails.
 
 # Example
