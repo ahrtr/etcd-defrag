@@ -9,14 +9,9 @@ import (
 	"go.etcd.io/etcd/client/pkg/v3/srv"
 )
 
-func endpointsWithLeaderAtEnd(gcfg globalConfig) ([]string, error) {
+func endpointsWithLeaderAtEnd(gcfg globalConfig, statusList []epStatus) ([]string, error) {
 	eps, err := endpoints(gcfg)
 	if err != nil || len(eps) <= 1 {
-		return eps, err
-	}
-
-	statusList, err := memberStatus(gcfg)
-	if err != nil {
 		return eps, err
 	}
 

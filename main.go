@@ -20,7 +20,7 @@ func newDefragCommand() *cobra.Command {
 		Run:   defragCommandFunc,
 	}
 
-	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", []string{"127.0.0.1:2379"}, "etcd endpoints")
+	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", []string{"127.0.0.1:2379"}, "comma separated etcd endpoints")
 
 	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", 2*time.Second, "dial timeout for client connections")
 	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", 60*time.Second, "command timeout (excluding dial timeout)")
@@ -43,6 +43,9 @@ func newDefragCommand() *cobra.Command {
 
 	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
 	defragCmd.Flags().BoolVar(&globalCfg.continueOnError, "continue-on-error", true, "whether continue to defragment next endpoint if current one fails")
+
+	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", 2*1024*1024*1024, "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
+	defragCmd.Flags().StringSliceVar(&globalCfg.defragRules, "defrag-rules", []string{}, "comma separated rules (etcd-defrag will run defragmentation if the rule is empty or any rule is evaluated to true)")
 
 	return defragCmd
 }
@@ -71,7 +74,14 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	eps, err := endpointsWithLeaderAtEnd(globalCfg)
+	fmt.Println("Getting members' status")
+	statusList, err := getMemberStatus(globalCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to get members' status: %v\n", err)
+		os.Exit(1)
+	}
+
+	eps, err := endpointsWithLeaderAtEnd(globalCfg, statusList)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to get endpoints: %v\n", err)
 		os.Exit(1)
@@ -80,10 +90,30 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	fmt.Printf("%d endpoints need to be defragmented: %v\n", len(eps), eps)
 	cfg := clientConfigWithoutEndpoints(globalCfg)
 	failures := 0
-	for _, ep := range eps {
+	for i, ep := range eps {
 		cfg.Endpoints = []string{ep}
 
-		fmt.Printf("Defragmenting endpoint: %v\n", ep)
+		fmt.Printf("Defragmenting endpoint: %s\n", ep)
+
+		evalRet, err := evaluate(globalCfg, statusList[i])
+		if err != nil {
+
+		}
+		if !evalRet || err != nil {
+			if err != nil {
+				failures++
+				fmt.Fprintf(os.Stderr, "Evaluation failed, endpoint: %s, error:%v\n", ep, err)
+				if !globalCfg.continueOnError {
+					break
+				}
+			}
+			if !evalRet {
+				fmt.Fprintf(os.Stderr, "Evaluation result is false, so skipping endpoint: %s\n", ep)
+			}
+
+			continue
+		}
+
 		c, err := createClient(cfg)
 		if err != nil {
 			failures++
@@ -149,4 +179,16 @@ func healthCheck(gcfg globalConfig) bool {
 	}
 
 	return unhealthyCount == 0
+}
+
+func getMemberStatus(gcfg globalConfig) ([]epStatus, error) {
+	statusList, err := memberStatus(gcfg)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, status := range statusList {
+		fmt.Println(status.String())
+	}
+	return statusList, nil
 }

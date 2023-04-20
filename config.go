@@ -31,6 +31,9 @@ type globalConfig struct {
 
 	useClusterEndpoints bool
 	continueOnError     bool
+
+	dbQuotaBytes int
+	defragRules  []string
 }
 
 func clientConfigWithoutEndpoints(gcfg globalConfig) *clientv3.ConfigSpec {

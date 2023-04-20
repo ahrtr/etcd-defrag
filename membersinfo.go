@@ -148,6 +148,11 @@ type epStatus struct {
 	Resp *clientv3.StatusResponse `json:"Status"`
 }
 
+func (es epStatus) String() string {
+	return fmt.Sprintf("endpoint: %s, dbSize: %d, dbSizeInUse: %d, memberId: %x, leader: %x",
+		es.Ep, es.Resp.DbSize, es.Resp.DbSizeInUse, es.Resp.Header.MemberId, es.Resp.Leader)
+}
+
 func memberStatus(gcfg globalConfig) ([]epStatus, error) {
 	eps, err := endpoints(gcfg)
 	if err != nil {
@@ -161,7 +166,7 @@ func memberStatus(gcfg globalConfig) ([]epStatus, error) {
 		cfgSpec.Endpoints = []string{ep}
 		c, err := createClient(cfgSpec)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to createClient: %w", err)
 		}
 
 		ctx, cancel := commandCtx(gcfg.commandTimeout)
