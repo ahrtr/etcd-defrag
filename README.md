@@ -76,18 +76,6 @@ Finished defragmenting etcd member[http://127.0.0.1:32379]. took 122.612044ms
 The defragmentation is successful.
 ```
 
-Note that the endpoint `http://127.0.0.1:22379` is the leader, so it's placed at the end of the list,
-```
-$ etcdctl endpoint status -w table --cluster
-+------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
-|        ENDPOINT        |        ID        | VERSION | DB SIZE | IS LEADER | IS LEARNER | RAFT TERM | RAFT INDEX | RAFT APPLIED INDEX | ERRORS |
-+------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
-|  http://127.0.0.1:2379 | 8211f1d0f64f3269 |   3.5.8 |   25 kB |     false |      false |         6 |         37 |                 37 |        |
-| http://127.0.0.1:22379 | 91bc3c398fb3c146 |   3.5.8 |   25 kB |      true |      false |         6 |         37 |                 37 |        |
-| http://127.0.0.1:32379 | fd422379fda50e48 |   3.5.8 |   25 kB |     false |      false |         6 |         37 |                 37 |        |
-+------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
-```
-
 ### Example 3: run defragmentation on all members in the cluster
 Command:
 ```
