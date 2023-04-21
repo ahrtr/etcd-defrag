@@ -64,7 +64,7 @@ func main() {
 
 func defragCommandFunc(cmd *cobra.Command, args []string) {
 	fmt.Println("Validating configuration.")
-	if err := validateConfig(cmd); err != nil {
+	if err := validateConfig(cmd, globalCfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Validating configuration failed: %v\n", err)
 		os.Exit(1)
 	}
@@ -106,11 +106,10 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				if !globalCfg.continueOnError {
 					break
 				}
-			}
-			if !evalRet {
-				fmt.Fprintf(os.Stderr, "Evaluation result is false, so skipping endpoint: %s\n", ep)
+				continue
 			}
 
+			fmt.Fprintf(os.Stderr, "Evaluation result is false, so skipping endpoint: %s\n", ep)
 			continue
 		}
 
@@ -146,17 +145,25 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	fmt.Println("The defragmentation is successful.")
 }
 
-func validateConfig(cmd *cobra.Command) error {
-	if globalCfg.certFile == "" && cmd.Flags().Changed("cert") {
+func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
+	if gcfg.certFile == "" && cmd.Flags().Changed("cert") {
 		return errors.New("empty string is passed to --cert option")
 	}
 
-	if globalCfg.keyFile == "" && cmd.Flags().Changed("key") {
+	if gcfg.keyFile == "" && cmd.Flags().Changed("key") {
 		return errors.New("empty string is passed to --key option")
 	}
 
-	if globalCfg.caFile == "" && cmd.Flags().Changed("cacert") {
+	if gcfg.caFile == "" && cmd.Flags().Changed("cacert") {
 		return errors.New("empty string is passed to --cacert option")
+	}
+
+	fmt.Printf("There are %d defragmentation rules: %v\n", len(gcfg.defragRules), gcfg.defragRules)
+	for _, rule := range gcfg.defragRules {
+		if err := validateRule(rule); err != nil {
+			return fmt.Errorf("invalid rule %q, error: %w", rule, err)
+		}
+		fmt.Printf("Rule %q is valid.\n", rule)
 	}
 
 	return nil
