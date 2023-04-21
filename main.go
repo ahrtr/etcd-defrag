@@ -45,7 +45,7 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().BoolVar(&globalCfg.continueOnError, "continue-on-error", true, "whether continue to defragment next endpoint if current one fails")
 
 	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", 2*1024*1024*1024, "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
-	defragCmd.Flags().StringSliceVar(&globalCfg.defragRules, "defrag-rules", []string{}, "comma separated rules (etcd-defrag will run defragmentation if the rule is empty or any rule is evaluated to true)")
+	defragCmd.Flags().StringVar(&globalCfg.defragRule, "defrag-rule", "", "defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)")
 
 	return defragCmd
 }
@@ -155,12 +155,16 @@ func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
 		return errors.New("empty string is passed to --cacert option")
 	}
 
-	fmt.Printf("There are %d defragmentation rules: %v\n", len(gcfg.defragRules), gcfg.defragRules)
-	for _, rule := range gcfg.defragRules {
-		if err := validateRule(rule); err != nil {
-			return fmt.Errorf("invalid rule %q, error: %w", rule, err)
+	if len(gcfg.defragRule) > 0 {
+		fmt.Printf("Validating the defragmentation rule: %v ... ", gcfg.defragRule)
+
+		if err := validateRule(gcfg.defragRule); err != nil {
+			fmt.Println("invalid")
+			return fmt.Errorf("invalid rule %q, error: %w", gcfg.defragRule, err)
 		}
-		fmt.Printf("Rule %q is valid.\n", rule)
+		fmt.Println("valid")
+	} else {
+		fmt.Println("No defragmentation rule provided")
 	}
 
 	return nil

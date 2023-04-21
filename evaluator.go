@@ -21,7 +21,7 @@ func defaultVariables() map[string]interface{} {
 }
 
 func evaluate(gcfg globalConfig, es epStatus) (bool, error) {
-	if len(gcfg.defragRules) == 0 {
+	if len(gcfg.defragRule) == 0 {
 		return true, nil
 	}
 
@@ -31,18 +31,15 @@ func evaluate(gcfg globalConfig, es epStatus) (bool, error) {
 		dbSizeInUse: int(es.Resp.DbSizeInUse),
 	}
 	eval := goval.NewEvaluator()
-	for _, rule := range gcfg.defragRules {
-		resultRaw, err := eval.Evaluate(rule, variables, nil)
-		result := resultRaw.(bool)
-		if result || err != nil {
-			return result, err
-		}
-	}
 
-	return false, nil
+	result, err := eval.Evaluate(gcfg.defragRule, variables, nil)
+	return result.(bool), err
 }
 
 func validateRule(rule string) error {
+	if len(rule) == 0 {
+		return nil
+	}
 	eval := goval.NewEvaluator()
 	result, err := eval.Evaluate(rule, defaultVariables(), nil)
 	if err != nil {

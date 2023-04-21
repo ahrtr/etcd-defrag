@@ -33,7 +33,7 @@ type globalConfig struct {
 	continueOnError     bool
 
 	dbQuotaBytes int
-	defragRules  []string
+	defragRule   string
 }
 
 func clientConfigWithoutEndpoints(gcfg globalConfig) *clientv3.ConfigSpec {
