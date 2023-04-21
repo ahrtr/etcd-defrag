@@ -169,4 +169,4 @@ $ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbSi
 Any contribution is welcome!
 
 ## Note
-Please ensure running etcd on a version > 3.5.4, and read [Two possible data inconsistency issues in etcd](https://groups.google.com/g/etcd-dev/c/8S7u6NqW6C4) to get more details.
+Please ensure running etcd on a version >= 3.5.6, and read [Two possible data inconsistency issues in etcd](https://groups.google.com/g/etcd-dev/c/8S7u6NqW6C4) to get more details.
