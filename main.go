@@ -96,9 +96,6 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		fmt.Printf("Defragmenting endpoint: %s\n", ep)
 
 		evalRet, err := evaluate(globalCfg, statusList[i])
-		if err != nil {
-
-		}
 		if !evalRet || err != nil {
 			if err != nil {
 				failures++
@@ -126,7 +123,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		ctx, cancel := commandCtx(globalCfg.commandTimeout)
 		startTs := time.Now()
 		_, err = c.Defragment(ctx, ep)
-		d := time.Now().Sub(startTs)
+		d := time.Since(startTs)
 		cancel()
 
 		if err != nil {
