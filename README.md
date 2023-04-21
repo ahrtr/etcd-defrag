@@ -1,5 +1,17 @@
 etcd-defrag
 ======
+## Table of Contents
+
+- **[Overview](#overview)**
+- **[Examples](#examples)**
+  - [Example 1: run defragmentation on one endpoint](#example-1-run-defragmentation-on-one-endpoint)
+  - [Example 2: run defragmentation on multiple endpoints](#example-2-run-defragmentation-on-multiple-endpoints)
+  - [Example 3: run defragmentation on all members in the cluster](#example-3-run-defragmentation-on-all-members-in-the-cluster)
+- **[Defragmentation rules](#defragmentation-rules)**
+- **[Contributing](#contributing)**
+- **[Note](#note)**
+
+## Overview
 etcd-defrag is an easier to use and smarter etcd defragmentation tool. It references the implementation
 of `etcdctl defrag` command, but with big refactoring and extra enhancements below,
 - check the status of all members, and stop the operation if any member is unhealthy. Note that it ignores the `NOSPACE` alarm
@@ -120,9 +132,9 @@ $ etcdctl endpoint status -w table --cluster
 ```
 
 ## Defragmentation rules
-Users can configure comma separated defragmentation rules. Each rule must be a boolean expression, which means its evaluation result should be a boolean value.
-It supports arithmetic (e.g. `+` `-` `*` `/` `%`) and logic (e.g. `==` `!=` `<` `>` `<=` `>=` `&&` `||` `!`) operators supported by golang. Parenthesis `()` 
-can be used to control precedence.
+Users can configure comma separated defragmentation rules using the flag `--defrag-rules`. Each rule must be a boolean expression,
+which means its evaluation result should be a boolean value. **It supports arithmetic (e.g. `+` `-` `*` `/` `%`) and logic
+(e.g. `==` `!=` `<` `>` `<=` `>=` `&&` `||` `!`) operators supported by golang. Parenthesis `()` can be used to control precedence**.
 
 Currently, `etcd-defrag` supports three variables below,
 | Variable name   | Description |
@@ -131,10 +143,11 @@ Currently, `etcd-defrag` supports three variables below,
 | `dbSizeInUse`   | total size in use of the etcd database |
 | `dbQuota`       | etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)|
 
-Rules may be configured via the flag `--defrag-rules`. For example, if you want to run defragmentation if `dbSize > 80% * dbQuota` or `dbSize - dbSizeInUse > 200MiB`, you
-can run command below,
+For example, if you want to run defragmentation if the total db size is greater than 80%
+of the quota **OR** there is at least 200MiB free space, the defragmentation rules are `dbSize > dbQuota*80/100, dbSize - dbSizeInUse > 200*1024*1024`.
+The complete command is below,
 ```
-$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rules="dbSize*80/100 > dbQuota, dbSize - dbSizeInUse > 200*1024*1024"
+$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rules="dbSize > dbQuota*80/100, dbSize - dbSizeInUse > 200*1024*1024"
 ```
 Output:
 ```
@@ -162,12 +175,13 @@ The defragmentation is successful.
 
 The above command is equivalent to command below,
 ```
-$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rules="dbSize*80/100 > dbQuota || dbSize - dbSizeInUse > 200*1024*1024"
+$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rules="dbSize > dbQuota*80/100 || dbSize - dbSizeInUse > 200*1024*1024"
 ```
 
-If you want to run defragmentation when both conditions are true, then run command below,
+If you want to run defragmentation when both conditions are true, namely the total db size is greater than 80%
+of the quota **AND** there is at least 200MiB free space, then run command below,
 ```
-$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rules="dbSize*80/100 > dbQuota && dbSize - dbSizeInUse > 200*1024*1024"
+$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rules="dbSize > dbQuota*80/100 && dbSize - dbSizeInUse > 200*1024*1024"
 ```
 
 ## Contributing
