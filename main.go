@@ -74,7 +74,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Println("Getting members' status")
+	fmt.Println("Getting members status")
 	statusList, err := getMemberStatus(globalCfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to get members' status: %v\n", err)
