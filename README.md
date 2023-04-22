@@ -122,7 +122,7 @@ The defragmentation is successful.
 Only one endpoint is provided, but it still runs defragmentation on all members in the cluster thanks to the flag `--cluster`.
 Note that the endpoint `http://127.0.0.1:2379` is the leader, so it's placed at the end of the list,
 ```
-3 endpoints need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379 http://127.0.0.1:2379]
+3 endpoint(s) need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379 http://127.0.0.1:2379]
 ```
 ```
 $ etcdctl endpoint status -w table --cluster
