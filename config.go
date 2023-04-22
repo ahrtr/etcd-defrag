@@ -8,7 +8,8 @@ import (
 )
 
 type globalConfig struct {
-	endpoints []string
+	endpoints           []string
+	useClusterEndpoints bool
 
 	dialTimeout      time.Duration
 	commandTimeout   time.Duration
@@ -29,8 +30,9 @@ type globalConfig struct {
 	username string
 	password string
 
-	useClusterEndpoints bool
-	continueOnError     bool
+	compaction bool
+
+	continueOnError bool
 
 	dbQuotaBytes int
 	defragRule   string

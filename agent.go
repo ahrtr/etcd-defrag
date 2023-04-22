@@ -149,35 +149,78 @@ type epStatus struct {
 }
 
 func (es epStatus) String() string {
-	return fmt.Sprintf("endpoint: %s, dbSize: %d, dbSizeInUse: %d, memberId: %x, leader: %x",
-		es.Ep, es.Resp.DbSize, es.Resp.DbSizeInUse, es.Resp.Header.MemberId, es.Resp.Leader)
+	return fmt.Sprintf("endpoint: %s, dbSize: %d, dbSizeInUse: %d, memberId: %x, leader: %x, revision: %d, term: %d, index: %d",
+		es.Ep, es.Resp.DbSize, es.Resp.DbSizeInUse, es.Resp.Header.MemberId, es.Resp.Leader, es.Resp.Header.Revision, es.Resp.RaftTerm, es.Resp.RaftIndex)
 }
 
-func memberStatus(gcfg globalConfig) ([]epStatus, error) {
+func membersStatus(gcfg globalConfig) ([]epStatus, error) {
 	eps, err := endpoints(gcfg)
 	if err != nil {
 		return nil, err
 	}
 
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
-
 	var statusList []epStatus
 	for _, ep := range eps {
-		cfgSpec.Endpoints = []string{ep}
-		c, err := createClient(cfgSpec)
-		if err != nil {
-			return nil, fmt.Errorf("failed to createClient: %w", err)
-		}
-
-		ctx, cancel := commandCtx(gcfg.commandTimeout)
-		resp, err := c.Status(ctx, ep)
-		cancel()
-		c.Close()
+		status, err := memberStatus(gcfg, ep)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get member(%q) status: %w", ep, err)
 		}
-		statusList = append(statusList, epStatus{Ep: ep, Resp: resp})
+		statusList = append(statusList, status)
 	}
 
 	return statusList, nil
+}
+
+func memberStatus(gcfg globalConfig, ep string) (epStatus, error) {
+	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec.Endpoints = []string{ep}
+	c, err := createClient(cfgSpec)
+	if err != nil {
+		return epStatus{}, fmt.Errorf("failed to createClient: %w", err)
+	}
+
+	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	defer func() {
+		c.Close()
+		cancel()
+	}()
+	resp, err := c.Status(ctx, ep)
+
+	return epStatus{Ep: ep, Resp: resp}, err
+}
+
+func compact(gcfg globalConfig, rev int64, ep string) error {
+	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec.Endpoints = []string{ep}
+	c, err := createClient(cfgSpec)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	defer func() {
+		c.Close()
+		cancel()
+	}()
+
+	_, err = c.Compact(ctx, rev, []clientv3.CompactOption{clientv3.WithCompactPhysical()}...)
+	return err
+}
+
+func defragment(gcfg globalConfig, ep string) error {
+	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec.Endpoints = []string{ep}
+	c, err := createClient(cfgSpec)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	defer func() {
+		c.Close()
+		cancel()
+	}()
+
+	_, err = c.Defragment(ctx, ep)
+	return err
 }
