@@ -21,6 +21,7 @@ func newDefragCommand() *cobra.Command {
 	}
 
 	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", []string{"127.0.0.1:2379"}, "comma separated etcd endpoints")
+	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
 
 	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", 2*time.Second, "dial timeout for client connections")
 	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", 60*time.Second, "command timeout (excluding dial timeout)")
@@ -41,7 +42,8 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().StringVarP(&globalCfg.dnsService, "discovery-srv-name", "", "", "service name to query when using DNS discovery")
 	defragCmd.Flags().BoolVar(&globalCfg.insecureDiscovery, "insecure-discovery", true, "accept insecure SRV records describing cluster endpoints")
 
-	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
+	defragCmd.Flags().BoolVar(&globalCfg.compaction, "compaction", true, "whether execute compaction before the defragmentation (defaults to true)")
+
 	defragCmd.Flags().BoolVar(&globalCfg.continueOnError, "continue-on-error", true, "whether continue to defragment next endpoint if current one fails")
 
 	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", 2*1024*1024*1024, "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
@@ -75,9 +77,9 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("Getting members status")
-	statusList, err := getMemberStatus(globalCfg)
+	statusList, err := getMembersStatus(globalCfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get members' status: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to get members status: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -87,15 +89,32 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("%d endpoints need to be defragmented: %v\n", len(eps), eps)
-	cfg := clientConfigWithoutEndpoints(globalCfg)
+	if globalCfg.compaction {
+		fmt.Printf("Running compaction until revision: %d ... ", statusList[0].Resp.Header.Revision)
+		if err := compact(globalCfg, statusList[0].Resp.Header.Revision, eps[0]); err != nil {
+			fmt.Printf("failed, %v\n", err)
+		} else {
+			fmt.Println("successful")
+		}
+	} else {
+		fmt.Println("Skip compaction.")
+	}
+
+	fmt.Printf("%d endpoint(s) need to be defragmented: %v\n", len(eps), eps)
 	failures := 0
-	for i, ep := range eps {
-		cfg.Endpoints = []string{ep}
+	for _, ep := range eps {
+		fmt.Print("[Before defragmentation] ")
+		status, err := getMemberStatus(globalCfg, ep)
+		if err != nil {
+			failures++
+			fmt.Fprintf(os.Stderr, "Failed to get member (%q) status, error: %v\n", ep, err)
+			if !globalCfg.continueOnError {
+				break
+			}
+			continue
+		}
 
-		fmt.Printf("Defragmenting endpoint: %s\n", ep)
-
-		evalRet, err := evaluate(globalCfg, statusList[i])
+		evalRet, err := evaluate(globalCfg, status)
 		if !evalRet || err != nil {
 			if err != nil {
 				failures++
@@ -105,38 +124,38 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				}
 				continue
 			}
-
 			fmt.Fprintf(os.Stderr, "Evaluation result is false, so skipping endpoint: %s\n", ep)
 			continue
 		}
 
-		c, err := createClient(cfg)
+		fmt.Printf("Defragmenting endpoint %q\n", ep)
+		startTs := time.Now()
+		err = defragment(globalCfg, ep)
+		d := time.Since(startTs)
 		if err != nil {
 			failures++
-			fmt.Fprintf(os.Stderr, "Failed to connect to member[%s]: %v\n", ep, err)
+			fmt.Fprintf(os.Stderr, "Failed to defragment etcd member %q. took %s. (%v)\n", ep, d.String(), err)
+			if !globalCfg.continueOnError {
+				break
+			}
+			continue
+		} else {
+			fmt.Printf("Finished defragmenting etcd endpoint %q. took %s\n", ep, d.String())
+		}
+
+		fmt.Print("[Post defragmentation] ")
+		_, err = getMemberStatus(globalCfg, ep)
+		if err != nil {
+			failures++
+			fmt.Fprintf(os.Stderr, "Failed to get member (%q) status, error: %v\n", ep, err)
 			if !globalCfg.continueOnError {
 				break
 			}
 			continue
 		}
-
-		ctx, cancel := commandCtx(globalCfg.commandTimeout)
-		startTs := time.Now()
-		_, err = c.Defragment(ctx, ep)
-		d := time.Since(startTs)
-		cancel()
-
-		if err != nil {
-			failures++
-			fmt.Fprintf(os.Stderr, "Failed to defragment etcd member [%s]. took %s. (%v)\n", ep, d.String(), err)
-			if !globalCfg.continueOnError {
-				break
-			}
-		} else {
-			fmt.Printf("Finished defragmenting etcd member[%s]. took %s\n", ep, d.String())
-		}
 	}
 	if failures != 0 {
+		fmt.Fprintf(os.Stderr, "%d (total %d) endpoint(s) failed to be defragmented.\n", failures, len(eps))
 		os.Exit(1)
 	}
 	fmt.Println("The defragmentation is successful.")
@@ -189,8 +208,8 @@ func healthCheck(gcfg globalConfig) bool {
 	return unhealthyCount == 0
 }
 
-func getMemberStatus(gcfg globalConfig) ([]epStatus, error) {
-	statusList, err := memberStatus(gcfg)
+func getMembersStatus(gcfg globalConfig) ([]epStatus, error) {
+	statusList, err := membersStatus(gcfg)
 	if err != nil {
 		return nil, err
 	}
@@ -199,4 +218,13 @@ func getMemberStatus(gcfg globalConfig) ([]epStatus, error) {
 		fmt.Println(status.String())
 	}
 	return statusList, nil
+}
+
+func getMemberStatus(gcfg globalConfig, ep string) (epStatus, error) {
+	status, err := memberStatus(gcfg, ep)
+	if err != nil {
+		return epStatus{}, err
+	}
+	fmt.Println(status.String())
+	return status, nil
 }
