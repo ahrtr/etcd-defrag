@@ -20,3 +20,10 @@ fmt:
 lint:
 	golangci-lint run ./...
 
+
+clean:
+	rm -rf ./bin
+	rm -rf ./release
+	rm -rf ./.idea
+	rm -f etcd-defrag
+
