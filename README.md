@@ -8,6 +8,7 @@ etcd-defrag
   - [Example 2: run defragmentation on multiple endpoints](#example-2-run-defragmentation-on-multiple-endpoints)
   - [Example 3: run defragmentation on all members in the cluster](#example-3-run-defragmentation-on-all-members-in-the-cluster)
 - **[Defragmentation rule](#defragmentation-rule)**
+- **[Container image](#container-image)**
 - **[Contributing](#contributing)**
 - **[Note](#note)**
 
