@@ -1,4 +1,11 @@
 
+all: build
+
+.PHONY: build
+build:
+	GO_BUILD_FLAGS="${GO_BUILD_FLAGS} -v -mod=readonly" ./build.sh
+
+
 GOFILES = $(shell find . -name \*.go)
 
 .PHONY: fmt

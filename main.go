@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -24,7 +25,7 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
 
 	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", 2*time.Second, "dial timeout for client connections")
-	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", 60*time.Second, "command timeout (excluding dial timeout)")
+	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", 30*time.Second, "command timeout (excluding dial timeout)")
 	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTime, "keepalive-time", 2*time.Second, "keepalive time for client connections")
 	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTimeout, "keepalive-timeout", 6*time.Second, "keepalive timeout for client connections")
 
@@ -49,6 +50,7 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", 2*1024*1024*1024, "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
 	defragCmd.Flags().StringVar(&globalCfg.defragRule, "defrag-rule", "", "defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)")
 
+	defragCmd.Flags().BoolVar(&globalCfg.printVersion, "version", false, "print the version and exit")
 	return defragCmd
 }
 
@@ -64,7 +66,19 @@ func main() {
 	}
 }
 
+func printVersion(printVersion bool) {
+	if printVersion {
+		fmt.Printf("etcd-defrag Version: %s\n", Version)
+		fmt.Printf("Git SHA: %s\n", GitSHA)
+		fmt.Printf("Go Version: %s\n", runtime.Version())
+		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
+}
+
 func defragCommandFunc(cmd *cobra.Command, args []string) {
+	printVersion(globalCfg.printVersion)
+
 	fmt.Println("Validating configuration.")
 	if err := validateConfig(cmd, globalCfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Validating configuration failed: %v\n", err)

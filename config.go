@@ -36,6 +36,8 @@ type globalConfig struct {
 
 	dbQuotaBytes int
 	defragRule   string
+
+	printVersion bool
 }
 
 func clientConfigWithoutEndpoints(gcfg globalConfig) *clientv3.ConfigSpec {
