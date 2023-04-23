@@ -173,6 +173,12 @@ of the quota **AND** there is at least 200MiB free space, then run command below
 $ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbSize > dbQuota*80/100 && dbSize - dbSizeInUse > 200*1024*1024"
 ```
 
+## Container image
+Currently only binaries are released. If you need container image(s), please build them yourself using command something like below,
+```
+$ DOCKER_BUILDKIT=1 docker build -t "etcd-defrag:${VERSION}" -f Dockerfile.${GOARCH} .
+```
+
 ## Contributing
 Any contribution is welcome!
 
