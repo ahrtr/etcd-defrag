@@ -84,6 +84,9 @@ function main {
       fi
     done
   done
+
+  echo "Generating sha256sums of release artifacts."
+  ls . | grep -E '\.tar.gz$|\.zip$' | xargs shasum -a 256 > ./SHA256SUMS
 }
 
 main

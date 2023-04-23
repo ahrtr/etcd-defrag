@@ -30,109 +30,100 @@ It adds the following extra flags,
 | `--etcd-storage-quota-bytes` | etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes), defaults to `2*1024*1024*1024` |
 | `--defrag-rule`              | defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true), defaults to empty. See more details below. |
 
+See the complete flags below,
+```
+$ ./etcd-defrag -h
+A simple command line tool for etcd defragmentation
+
+Usage:
+  etcd-defrag [flags]
+
+Flags:
+      --cacert string                  verify certificates of TLS-enabled secure servers using this CA bundle
+      --cert string                    identify secure client using this TLS certificate file
+      --cluster                        use all endpoints from the cluster member list
+      --command-timeout duration       command timeout (excluding dial timeout) (default 30s)
+      --compaction                     whether execute compaction before the defragmentation (defaults to true) (default true)
+      --continue-on-error              whether continue to defragment next endpoint if current one fails (default true)
+      --defrag-rule string             defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)
+      --dial-timeout duration          dial timeout for client connections (default 2s)
+  -d, --discovery-srv string           domain name to query for SRV records describing cluster endpoints
+      --discovery-srv-name string      service name to query when using DNS discovery
+      --endpoints strings              comma separated etcd endpoints (default [127.0.0.1:2379])
+      --etcd-storage-quota-bytes int   etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes) (default 2147483648)
+  -h, --help                           help for etcd-defrag
+      --insecure-discovery             accept insecure SRV records describing cluster endpoints (default true)
+      --insecure-skip-tls-verify       skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)
+      --insecure-transport             disable transport security for client connections (default true)
+      --keepalive-time duration        keepalive time for client connections (default 2s)
+      --keepalive-timeout duration     keepalive timeout for client connections (default 6s)
+      --key string                     identify secure client using this TLS key file
+      --password string                password for authentication (if this option is used, --user option shouldn't include password)
+      --user string                    username[:password] for authentication (prompt if password is not supplied)
+      --version                        print the version and exit
+```
 
 ## Examples
 ### Example 1: run defragmentation on one endpoint
 Command:
 ```
-$ ./etcd-defrag --endpoints=http://127.0.0.1:22379
-```
-Output:
-```
-Validating configuration.
-No defragmentation rule provided
-Performing health check.
-endpoint: http://127.0.0.1:22379, health: true, took: 7.227642ms, error: 
-endpoint: http://127.0.0.1:2379, health: true, took: 13.255694ms, error: 
-endpoint: http://127.0.0.1:32379, health: true, took: 6.666809ms, error: 
-Getting members status
-endpoint: http://127.0.0.1:22379, dbSize: 167936, dbSizeInUse: 167936, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9779, term: 2, index: 9831
-Running compaction until revision: 9779 ... successful
-1 endpoint(s) need to be defragmented: [http://127.0.0.1:22379]
-[Before defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 167936, dbSizeInUse: 94208, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9779, term: 2, index: 9832
-Defragmenting endpoint "http://127.0.0.1:22379"
-Finished defragmenting etcd endpoint "http://127.0.0.1:22379". took 161.063637ms
-[Post defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 90112, dbSizeInUse: 81920, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9779, term: 2, index: 9832
-The defragmentation is successful.
+$ ./etcd-defrag --endpoints=https://127.0.0.1:22379 --cacert ./ca.crt --key ./etcd-defrag.key --cert ./etcd-defrag.crt
 ```
 
 ### Example 2: run defragmentation on multiple endpoints
 Command:
 ```
-$ ./etcd-defrag --endpoints=http://127.0.0.1:22379,http://127.0.0.1:32379
-```
-Output:
-```
-Validating configuration.
-No defragmentation rule provided
-Performing health check.
-endpoint: http://127.0.0.1:2379, health: true, took: 6.368905ms, error: 
-endpoint: http://127.0.0.1:22379, health: true, took: 6.497803ms, error: 
-endpoint: http://127.0.0.1:32379, health: true, took: 6.745877ms, error: 
-Getting members status
-endpoint: http://127.0.0.1:22379, dbSize: 106496, dbSizeInUse: 106496, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9907, term: 2, index: 9963
-endpoint: http://127.0.0.1:32379, dbSize: 167936, dbSizeInUse: 106496, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 9907, term: 2, index: 9963
-Running compaction until revision: 9907 ... successful
-2 endpoint(s) need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379]
-[Before defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 110592, dbSizeInUse: 94208, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9907, term: 2, index: 9964
-Defragmenting endpoint "http://127.0.0.1:22379"
-Finished defragmenting etcd endpoint "http://127.0.0.1:22379". took 171.412229ms
-[Post defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 90112, dbSizeInUse: 81920, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9907, term: 2, index: 9964
-[Before defragmentation] endpoint: http://127.0.0.1:32379, dbSize: 167936, dbSizeInUse: 94208, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 9907, term: 2, index: 9964
-Defragmenting endpoint "http://127.0.0.1:32379"
-Finished defragmenting etcd endpoint "http://127.0.0.1:32379". took 132.445712ms
-[Post defragmentation] endpoint: http://127.0.0.1:32379, dbSize: 90112, dbSizeInUse: 81920, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 9907, term: 2, index: 9964
-The defragmentation is successful.
+$ ./etcd-defrag --endpoints=https://127.0.0.1:22379,https://127.0.0.1:32379 --cacert ./ca.crt --key ./etcd-defrag.key --cert ./etcd-defrag.crt
 ```
 
 ### Example 3: run defragmentation on all members in the cluster
 Command:
 ```
-$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster
+$ ./etcd-defrag --endpoints https://127.0.0.1:22379 --cluster --cacert ./ca.crt --key ./etcd-defrag.key --cert ./etcd-defrag.crt
 ```
 Output:
 ```
 Validating configuration.
 No defragmentation rule provided
 Performing health check.
-endpoint: http://127.0.0.1:2379, health: true, took: 4.702492ms, error: 
-endpoint: http://127.0.0.1:22379, health: true, took: 5.017075ms, error: 
-endpoint: http://127.0.0.1:32379, health: true, took: 4.747068ms, error: 
+endpoint: https://127.0.0.1:2379, health: true, took: 4.702492ms, error: 
+endpoint: https://127.0.0.1:22379, health: true, took: 5.017075ms, error: 
+endpoint: https://127.0.0.1:32379, health: true, took: 4.747068ms, error: 
 Getting members status
-endpoint: http://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 126976, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
-endpoint: http://127.0.0.1:22379, dbSize: 122880, dbSizeInUse: 122880, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
-endpoint: http://127.0.0.1:32379, dbSize: 122880, dbSizeInUse: 122880, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
+endpoint: https://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 126976, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
+endpoint: https://127.0.0.1:22379, dbSize: 122880, dbSizeInUse: 122880, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
+endpoint: https://127.0.0.1:32379, dbSize: 122880, dbSizeInUse: 122880, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
 Running compaction until revision: 10365 ... successful
-3 endpoint(s) need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379 http://127.0.0.1:2379]
-[Before defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 126976, dbSizeInUse: 90112, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-Defragmenting endpoint "http://127.0.0.1:22379"
-Finished defragmenting etcd endpoint "http://127.0.0.1:22379". took 224.151378ms
-[Post defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 90112, dbSizeInUse: 81920, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-[Before defragmentation] endpoint: http://127.0.0.1:32379, dbSize: 126976, dbSizeInUse: 90112, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-Defragmenting endpoint "http://127.0.0.1:32379"
-Finished defragmenting etcd endpoint "http://127.0.0.1:32379". took 139.138035ms
-[Post defragmentation] endpoint: http://127.0.0.1:32379, dbSize: 90112, dbSizeInUse: 81920, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-[Before defragmentation] endpoint: http://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 94208, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-Defragmenting endpoint "http://127.0.0.1:2379"
-Finished defragmenting etcd endpoint "http://127.0.0.1:2379". took 135.171807ms
-[Post defragmentation] endpoint: http://127.0.0.1:2379, dbSize: 90112, dbSizeInUse: 81920, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
+3 endpoint(s) need to be defragmented: [https://127.0.0.1:22379 https://127.0.0.1:32379 https://127.0.0.1:2379]
+[Before defragmentation] endpoint: https://127.0.0.1:22379, dbSize: 126976, dbSizeInUse: 90112, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
+Defragmenting endpoint "https://127.0.0.1:22379"
+Finished defragmenting etcd endpoint "https://127.0.0.1:22379". took 224.151378ms
+[Post defragmentation] endpoint: https://127.0.0.1:22379, dbSize: 90112, dbSizeInUse: 81920, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
+[Before defragmentation] endpoint: https://127.0.0.1:32379, dbSize: 126976, dbSizeInUse: 90112, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
+Defragmenting endpoint "https://127.0.0.1:32379"
+Finished defragmenting etcd endpoint "https://127.0.0.1:32379". took 139.138035ms
+[Post defragmentation] endpoint: https://127.0.0.1:32379, dbSize: 90112, dbSizeInUse: 81920, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
+[Before defragmentation] endpoint: https://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 94208, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
+Defragmenting endpoint "https://127.0.0.1:2379"
+Finished defragmenting etcd endpoint "https://127.0.0.1:2379". took 135.171807ms
+[Post defragmentation] endpoint: https://127.0.0.1:2379, dbSize: 90112, dbSizeInUse: 81920, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
 The defragmentation is successful.
 ```
 
 Only one endpoint is provided, but it still runs defragmentation on all members in the cluster thanks to the flag `--cluster`.
-Note that the endpoint `http://127.0.0.1:2379` is the leader, so it's placed at the end of the list,
+Note that the endpoint `https://127.0.0.1:2379` is the leader, so it's placed at the end of the list,
 ```
-3 endpoint(s) need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379 http://127.0.0.1:2379]
+3 endpoint(s) need to be defragmented: [https://127.0.0.1:22379 https://127.0.0.1:32379 https://127.0.0.1:2379]
 ```
 ```
 $ etcdctl endpoint status -w table --cluster
-+------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
-|        ENDPOINT        |        ID        | VERSION | DB SIZE | IS LEADER | IS LEARNER | RAFT TERM | RAFT INDEX | RAFT APPLIED INDEX | ERRORS |
-+------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
-|  http://127.0.0.1:2379 | 8211f1d0f64f3269 |   3.5.8 |   25 kB |      true |      false |        10 |        164 |                164 |        |
-| http://127.0.0.1:22379 | 91bc3c398fb3c146 |   3.5.8 |   25 kB |     false |      false |        10 |        164 |                164 |        |
-| http://127.0.0.1:32379 | fd422379fda50e48 |   3.5.8 |   25 kB |     false |      false |        10 |        164 |                164 |        |
-+------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
++-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+|        ENDPOINT         |        ID        | VERSION | DB SIZE | IS LEADER | IS LEARNER | RAFT TERM | RAFT INDEX | RAFT APPLIED INDEX | ERRORS |
++-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+|  https://127.0.0.1:2379 | 8211f1d0f64f3269 |   3.5.8 |   25 kB |      true |      false |        10 |        164 |                164 |        |
+| https://127.0.0.1:22379 | 91bc3c398fb3c146 |   3.5.8 |   25 kB |     false |      false |        10 |        164 |                164 |        |
+| https://127.0.0.1:32379 | fd422379fda50e48 |   3.5.8 |   25 kB |     false |      false |        10 |        164 |                164 |        |
++-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
 ```
 
 ## Defragmentation rule
