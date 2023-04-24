@@ -128,6 +128,11 @@ $ etcdctl endpoint status -w table --cluster
 ```
 
 ## Defragmentation rule
+Defragmentation is an expensive operation, so it should be executed as infrequent as possible. On the other hand, 
+it's also necessary to make sure any etcd member will not run out of the storage quota. It's exactly the reason 
+why the defragmentation rule is introduced, it can skip unnecessary expensive defragmentation, and also keep
+each member safe.
+
 Users can configure a defragmentation rule using the flag `--defrag-rule`. The rule must be a boolean expression,
 which means its evaluation result should be a boolean value. **It supports arithmetic (e.g. `+` `-` `*` `/` `%`) and logic
 (e.g. `==` `!=` `<` `>` `<=` `>=` `&&` `||` `!`) operators supported by golang. Parenthesis `()` can be used to control precedence**.
