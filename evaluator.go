@@ -33,6 +33,13 @@ func evaluate(gcfg globalConfig, es epStatus) (bool, error) {
 	eval := goval.NewEvaluator()
 
 	result, err := eval.Evaluate(gcfg.defragRule, variables, nil)
+	if err != nil {
+		return false, err
+	}
+	if _, ok := result.(bool); !ok {
+		return false, errors.New("the rule isn't a boolean expression")
+	}
+
 	return result.(bool), err
 }
 
