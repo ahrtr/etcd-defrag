@@ -1,0 +1,43 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  goversion:
+    uses: ./.github/workflows/go-version.yaml
+  test-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+        - linux-amd64-unit-test-1-cpu
+        - linux-amd64-unit-test-2-cpu
+        - linux-amd64-unit-test-4-cpu
+        - linux-amd64-unit-test-4-cpu-race
+    runs-on: ubuntu-latest
+    needs: goversion
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+      with:
+        go-version: ${{ needs.goversion.outputs.goversion }}
+    - env:
+        TARGET: ${{ matrix.target }}
+      run: |
+        case "${TARGET}" in
+          linux-amd64-unit-test-1-cpu)
+            CPU=1 make test
+            ;;
+          linux-amd64-unit-test-2-cpu)
+            CPU=2 make test
+            ;;
+          linux-amd64-unit-test-4-cpu)
+            CPU=4 make test
+            ;;
+          linux-amd64-unit-test-4-cpu-race)
+            CPU=4 ENABLE_RACE=true make test
+            ;;
+          *)
+            echo "Failed to find target"
+            exit 1
+            ;;
+        esac
+

@@ -1,12 +1,26 @@
+TESTFLAGS_RACE=-race=false
+ifdef ENABLE_RACE
+	TESTFLAGS_RACE=-race=true
+endif
+
+TESTFLAGS_CPU=
+ifdef CPU
+	TESTFLAGS_CPU=-cpu=$(CPU)
+endif
+TESTFLAGS = $(TESTFLAGS_RACE) $(TESTFLAGS_CPU) $(EXTRA_TESTFLAGS)
+
+TESTFLAGS_TIMEOUT=10m
+ifdef TIMEOUT
+	TESTFLAGS_TIMEOUT=$(TIMEOUT)
+endif
+
+GOFILES = $(shell find . -name \*.go)
 
 all: build
 
 .PHONY: build
 build:
 	GO_BUILD_FLAGS="${GO_BUILD_FLAGS} -v -mod=readonly" ./build.sh
-
-
-GOFILES = $(shell find . -name \*.go)
 
 .PHONY: fmt
 fmt:
@@ -20,6 +34,9 @@ fmt:
 lint:
 	golangci-lint run ./...
 
+.PHONY: test
+test:
+	go test -v ${TESTFLAGS} -timeout ${TESTFLAGS_TIMEOUT} ./...
 
 clean:
 	rm -rf ./bin
