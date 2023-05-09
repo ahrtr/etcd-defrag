@@ -142,7 +142,9 @@ Currently, `etcd-defrag` supports three variables below,
 |---------------  |-------------|
 | `dbSize`        | total size of the etcd database |
 | `dbSizeInUse`   | total size in use of the etcd database |
+| `dbSizeFree`    | total size not in use of the etcd database, defined as dbSize - dbSizeInUse|
 | `dbQuota`       | etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)|
+| `dbQuotaUsage`  | total usage of the etcd storage quota, defined as dbSize/dbQuota |
 
 For example, if you want to run defragmentation if the total db size is greater than 80%
 of the quota **OR** there is at least 200MiB free space, the defragmentation rule is `dbSize > dbQuota*80/100 || dbSize - dbSizeInUse > 200*1024*1024`.
@@ -150,6 +152,11 @@ The complete command is below,
 ```
 $ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbSize > dbQuota*80/100 || dbSize - dbSizeInUse > 200*1024*1024"
 ```
+Or,
+```
+$ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbQuotaUsage > 0.8 || dbSizeFree > 200*1024*1024"
+```
+
 Output:
 ```
 Validating configuration.

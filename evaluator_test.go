@@ -38,6 +38,16 @@ func TestValidateRule(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name:        "valid rule with dbQuotaUsage",
+			rule:        "dbQuotaUsage > 0.3",
+			expectError: false,
+		},
+		{
+			name:        "valid rule with dbSizeFree",
+			rule:        "dbSizeFree > 100",
+			expectError: false,
+		},
+		{
 			name:        "not a boolean expression",
 			rule:        "dbSize - dbSizeInUse",
 			expectError: true,
@@ -87,8 +97,21 @@ func TestEvaluate(t *testing.T) {
 			evaluationResult: true,
 		},
 		{
+			name:             "dbQuotaUsage is greater than 0.8",
+			rule:             "dbQuotaUsage > 0.8",
+			dbQuota:          100,
+			dbSize:           81,
+			evaluationResult: true,
+		},
+		{
 			name:    "dbSize is less than dbQuota*80/100",
 			rule:    "dbSize > dbQuota*80/100",
+			dbQuota: 100,
+			dbSize:  79,
+		},
+		{
+			name:    "dbQuotaUsage is less than 0.8",
+			rule:    "dbQuotaUsage > 0.8",
 			dbQuota: 100,
 			dbSize:  79,
 		},
@@ -100,8 +123,21 @@ func TestEvaluate(t *testing.T) {
 			evaluationResult: true,
 		},
 		{
+			name:             "dbSizeFree is greater than 200",
+			rule:             "dbSizeFree > 200",
+			dbSize:           301,
+			dbSizeInUse:      100,
+			evaluationResult: true,
+		},
+		{
 			name:        "free space is less than 200",
 			rule:        "dbSize - dbSizeInUse > 200",
+			dbSize:      299,
+			dbSizeInUse: 100,
+		},
+		{
+			name:        "dbSizeFree is less than 200",
+			rule:        "dbSizeFree > 200",
 			dbSize:      299,
 			dbSizeInUse: 100,
 		},
@@ -131,6 +167,22 @@ func TestEvaluate(t *testing.T) {
 		{
 			name:             "dbSize is greater than dbQuota*80/100 AND free space is less than 200",
 			rule:             "dbSize > dbQuota*80/100 || dbSize - dbSizeInUse > 200",
+			dbQuota:          100,
+			dbSize:           81,
+			dbSizeInUse:      60,
+			evaluationResult: true,
+		},
+		{
+			name:             "dbQuotaUsage is greater than 0.8 AND free space is greater than 200",
+			rule:             "dbQuotaUsage > 0.8 && dbSizeFree > 200",
+			dbQuota:          1000,
+			dbSize:           801,
+			dbSizeInUse:      600,
+			evaluationResult: true,
+		},
+		{
+			name:             "dbQuotaUsage is greater than 0.8 OR free space is less than 200",
+			rule:             "dbQuotaUsage > 0.8 || dbSizeFree > 200",
 			dbQuota:          100,
 			dbSize:           81,
 			dbSizeInUse:      60,

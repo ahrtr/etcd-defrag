@@ -7,17 +7,22 @@ import (
 )
 
 const (
-	dbSize      = "dbSize"
-	dbSizeInUse = "dbSizeInUse"
-	dbQuota     = "dbQuota"
+	dbSize       = "dbSize"
+	dbSizeInUse  = "dbSizeInUse"
+	dbQuota      = "dbQuota"
+	dbQuotaUsage = "dbQuotaUsage"
+	dbSizeFree   = "dbSizeFree"
 )
 
 func defaultVariables() map[string]interface{} {
-	return map[string]interface{}{
+	variables := map[string]interface{}{
 		dbQuota:     2 * 1024 * 1024 * 1024, // 2GiB
 		dbSize:      100 * 1024 * 1024,      // 100MiB
 		dbSizeInUse: 60 * 1024 * 1024,       // 60MiB
 	}
+	variables[dbQuotaUsage] = float64(variables[dbSize].(int)) / float64(variables[dbQuota].(int))
+	variables[dbSizeFree] = variables[dbSize].(int) - variables[dbSizeInUse].(int)
+	return variables
 }
 
 func evaluate(gcfg globalConfig, es epStatus) (bool, error) {
@@ -26,9 +31,11 @@ func evaluate(gcfg globalConfig, es epStatus) (bool, error) {
 	}
 
 	variables := map[string]interface{}{
-		dbQuota:     gcfg.dbQuotaBytes,
-		dbSize:      int(es.Resp.DbSize),
-		dbSizeInUse: int(es.Resp.DbSizeInUse),
+		dbQuota:      gcfg.dbQuotaBytes,
+		dbSize:       int(es.Resp.DbSize),
+		dbSizeInUse:  int(es.Resp.DbSizeInUse),
+		dbQuotaUsage: float64(es.Resp.DbSize) / float64(gcfg.dbQuotaBytes),
+		dbSizeFree:   int(es.Resp.DbSize) - int(es.Resp.DbSizeInUse),
 	}
 	eval := goval.NewEvaluator()
 
