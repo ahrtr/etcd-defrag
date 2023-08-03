@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"go.etcd.io/etcd/client/pkg/v3/srv"
+	"golang.org/x/exp/slices"
 )
 
 func endpointsWithLeaderAtEnd(gcfg globalConfig, statusList []epStatus) ([]string, error) {
@@ -49,6 +50,9 @@ func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 	for _, m := range memberlistResp.Members {
 		eps = append(eps, m.ClientURLs...)
 	}
+
+	slices.Sort(eps)
+	eps = slices.Compact(eps)
 
 	return eps, nil
 }
