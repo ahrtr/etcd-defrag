@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"go.uber.org/zap"
@@ -14,7 +15,15 @@ func commandCtx(timeout time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
 }
 
-func createClient(cfgSpec *clientv3.ConfigSpec) (*clientv3.Client, error) {
+// EtcdCluster composes the interfaces needed to interact with the cluster. It mainly exist to enable testing.
+type EtcdCluster interface {
+	clientv3.Maintenance
+	clientv3.Cluster
+	clientv3.KV
+	io.Closer
+}
+
+var createClient = func(cfgSpec *clientv3.ConfigSpec) (EtcdCluster, error) {
 	lg, _ := logutil.CreateDefaultZapLogger(zap.InfoLevel)
 	cfg, err := clientv3.NewClientConfig(cfgSpec, lg)
 	if err != nil {
