@@ -187,12 +187,11 @@ $ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbSi
 ```
 
 ## Container image
-Container images are relased automatically using GitHub actions and
-[`ko-build/ko`](https://github.com/ko-build/ko).
+Container images are released automatically using GitHub actions and [`ko-build/ko`](https://github.com/ko-build/ko).
 They can be used as follows:
 
 ```bash
-$ docker pull ahrtr/etcd-defrag:latest
+$ docker pull ghcr.io/ahrtr/etcd-defrag:latest
 ```
 
 Alternatively, you can build your own container images with:
