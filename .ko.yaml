@@ -1,0 +1,9 @@
+builds:
+- id: etcd-defrag
+  dir: .
+  main: ./
+  env:
+  - CGO_ENABLED=0
+  ldflags:
+  - -X main.Version={{.Env.TAG}}
+  - -X main.GitSHA={{.Env.COMMIT}}
