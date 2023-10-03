@@ -187,13 +187,22 @@ $ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbSi
 ```
 
 ## Container image
-Currently only binaries are released. If you need container image(s), please build them yourself using command something like below,
+Container images are relased automatically using GitHub actions and
+[`ko-build/ko`](https://github.com/ko-build/ko).
+They can be used as follows:
+
+```bash
+$ docker pull ahrtr/etcd-defrag:latest
 ```
+
+Alternatively, you can build your own container images with:
+
+```bash
 $ DOCKER_BUILDKIT=1 docker build -t "etcd-defrag:${VERSION}" -f Dockerfile .
 ```
 
 If you need an image for another `GOARCH` (e.g. `arm64`, `ppc64le` or `s390x`) other than `amd64`, use a command something like below,
-```
+```bash
 $ DOCKER_BUILDKIT=1 docker build --build-arg ARCH=${ARCH} -t "etcd-defrag:${VERSION}" -f Dockerfile .
 ```
 
