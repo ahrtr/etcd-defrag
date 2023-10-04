@@ -2,15 +2,22 @@ etcd-defrag
 ======
 ## Table of Contents
 
-- **[Overview](#overview)**
-- **[Examples](#examples)**
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Overview](#overview)
+- [Integration with Kubernetes with a CronJob](#integration-with-kubernetes-with-a-cronjob)
+- [Examples](#examples)
   - [Example 1: run defragmentation on one endpoint](#example-1-run-defragmentation-on-one-endpoint)
   - [Example 2: run defragmentation on multiple endpoints](#example-2-run-defragmentation-on-multiple-endpoints)
   - [Example 3: run defragmentation on all members in the cluster](#example-3-run-defragmentation-on-all-members-in-the-cluster)
-- **[Defragmentation rule](#defragmentation-rule)**
-- **[Container image](#container-image)**
-- **[Contributing](#contributing)**
-- **[Note](#note)**
+- [Defragmentation rule](#defragmentation-rule)
+- [Container image](#container-image)
+- [Contributing](#contributing)
+- [Note](#note)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 
 ## Overview
 etcd-defrag is an easier to use and smarter etcd defragmentation tool. It references the implementation
@@ -63,6 +70,24 @@ Flags:
       --user string                    username[:password] for authentication (prompt if password is not supplied)
       --version                        print the version and exit
 ```
+
+## Integration with Kubernetes with a CronJob
+
+It is possible to use [the example cronjob in
+`./doc/etcd-defrag-cronjob.yaml`](./doc/etcd-defrag-cronjob.yaml) on Kubernetes
+environments where the etcd servers are colocated with the control plane nodes.
+
+This example CronJob runs every weekday in the morning, and works by mounting
+the `/etc/kubernetes/pki/etcd` folder inside the pod, thereby permitting to
+defragment the etcd cluster inside the Kubernetes cluster itself. For more
+complex use cases you might to adapt the `--endpoints` and/or the certificates.
+
+The example CronJob is per default configured with
+`node-role.kubernetes.io/control-plane` affinity, and with the `hostNetwork:
+true` spec, so that the `etcd` server co-located on the apiserver can be
+reached directly with `127.0.0.1:2379`. If the actual IP address of the etcd
+endpoint(s) are specified instead, the CronJob can be configured with
+`hostNetwork: true`
 
 ## Examples
 ### Example 1: run defragmentation on one endpoint
@@ -126,7 +151,6 @@ $ etcdctl endpoint status -w table --cluster
 | https://127.0.0.1:32379 | fd422379fda50e48 |   3.5.8 |   25 kB |     false |      false |        10 |        164 |                164 |        |
 +-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
 ```
-
 ## Defragmentation rule
 Defragmentation is an expensive operation, so it should be executed as infrequent as possible. On the other hand, 
 it's also necessary to make sure any etcd member will not run out of the storage quota. It's exactly the reason 
