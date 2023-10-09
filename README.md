@@ -85,9 +85,7 @@ complex use cases you might to adapt the `--endpoints` and/or the certificates.
 The example CronJob is per default configured with
 `node-role.kubernetes.io/control-plane` affinity, and with the `hostNetwork:
 true` spec, so that the `etcd` server co-located on the apiserver can be
-reached directly with `127.0.0.1:2379`. If the actual IP address of the etcd
-endpoint(s) are specified instead, the CronJob can be configured with
-`hostNetwork: true`
+reached directly with `127.0.0.1:2379`.
 
 ## Examples
 ### Example 1: run defragmentation on one endpoint
