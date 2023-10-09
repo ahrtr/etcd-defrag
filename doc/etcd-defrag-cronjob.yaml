@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-defrag
+  namespace: kube-system
+spec:
+  schedule: "14 9 * * 1-5"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: etcd-defrag
+            image: ghcr.io/ahrtr/etcd-defrag:v0.4.0
+            args:
+            - --endpoints=https://127.0.0.1:2379
+            - --cacert=/ca.crt
+            - --cert=/client.crt
+            - --key=/client.key
+            - --cluster
+            - --defrag-rule
+            - "dbQuotaUsage > 0.8 || dbSize - dbSizeInUse > 200*1024*1024"
+            volumeMounts:
+            - mountPath: /ca.crt
+              name: ca-crt
+              readOnly: true
+            - mountPath: /client.crt
+              name: client-crt
+              readOnly: true
+            - mountPath: /client.key
+              name: client-key
+              readOnly: true
+          volumes:
+          - name: ca-crt
+            hostPath:
+              path: /etc/kubernetes/pki/etcd/ca.crt
+              type: File
+          - name: client-crt
+            hostPath:
+              path: /etc/kubernetes/pki/apiserver-etcd-client.crt
+              type: File
+          - name: client-key
+            hostPath:
+              path: /etc/kubernetes/pki/apiserver-etcd-client.key
+              type: File
+          restartPolicy: OnFailure
+          hostNetwork: true # needed in order to reach the etcd server with 127.0.0.1:2379
+          securityContext:
+            runAsUser: 0
+          tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+          - effect: NoExecute
+            operator: Exists
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
