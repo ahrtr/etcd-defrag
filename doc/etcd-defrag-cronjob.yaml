@@ -14,20 +14,35 @@ spec:
             image: ghcr.io/ahrtr/etcd-defrag:v0.4.0
             args:
             - --endpoints=https://127.0.0.1:2379
-            - --cacert=/etc/kubernetes/pki/etcd/ca.crt
-            - --cert=/etc/kubernetes/pki/etcd/peer.crt
-            - --key=/etc/kubernetes/pki/etcd/peer.key
+            - --cacert=/ca.crt
+            - --cert=/client.crt
+            - --key=/client.key
             - --cluster
             - --defrag-rule
             - "dbQuotaUsage > 0.8 || dbSize - dbSizeInUse > 200*1024*1024"
             volumeMounts:
-            - mountPath: /etc/kubernetes/pki/etcd
-              name: etcd-certs
+            - mountPath: /ca.crt
+              name: ca-crt
+              readOnly: true
+            - mountPath: /client.crt
+              name: client-crt
+              readOnly: true
+            - mountPath: /client.key
+              name: client-key
+              readOnly: true
           volumes:
-          - hostPath:
-              path: /etc/kubernetes/pki/etcd
-              type: Directory
-            name: etcd-certs
+          - name: ca-crt
+            hostPath:
+              path: /etc/kubernetes/pki/etcd/ca.crt
+              type: File
+          - name: client-crt
+            hostPath:
+              path: /etc/kubernetes/pki/apiserver-etcd-client.crt
+              type: File
+          - name: client-key
+            hostPath:
+              path: /etc/kubernetes/pki/apiserver-etcd-client.key
+              type: File
           restartPolicy: OnFailure
           hostNetwork: true # needed in order to reach the etcd server with 127.0.0.1:2379
           securityContext:
