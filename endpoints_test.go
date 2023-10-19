@@ -76,6 +76,24 @@ func TestEndpointDedup(t *testing.T) {
 			},
 			[]string{"etcd.example.com:2379", "etcd1.example.com:2379", "etcd2.example.com:2379", "etcd3.example.com:2379"},
 		},
+		{
+			"ignore learner",
+			&clientv3.MemberListResponse{
+				Members: []*etcdserverpb.Member{
+					{
+						ClientURLs: []string{"etcd1.example.com:2379"},
+						IsLearner:  true,
+					},
+					{
+						ClientURLs: []string{"etcd3.example.com:2379"},
+					},
+					{
+						ClientURLs: []string{"etcd2.example.com:2379"},
+					},
+				},
+			},
+			[]string{"etcd2.example.com:2379", "etcd3.example.com:2379"},
+		},
 	}
 
 	for _, testcase := range testcases {
