@@ -48,7 +48,10 @@ func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 
 	var eps []string
 	for _, m := range memberlistResp.Members {
-		eps = append(eps, m.ClientURLs...)
+		// learner member only serves Status and SerializableRead requests, just ignore it
+		if !m.GetIsLearner() {
+			eps = append(eps, m.ClientURLs...)
+		}
 	}
 
 	slices.Sort(eps)
