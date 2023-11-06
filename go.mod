@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/maja42/goval v1.3.1
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20230803155134-cca200345ab2
 	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20230803155134-cca200345ab2
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0.0.20230803155134-cca200345ab2
