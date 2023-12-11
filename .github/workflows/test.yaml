@@ -16,7 +16,7 @@ jobs:
     needs: goversion
     steps:
     - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: ${{ needs.goversion.outputs.goversion }}
     - env:

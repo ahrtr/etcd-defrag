@@ -15,7 +15,7 @@ jobs:
     needs: goversion
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ needs.goversion.outputs.goversion }}
       - uses: ko-build/setup-ko@v0.6
