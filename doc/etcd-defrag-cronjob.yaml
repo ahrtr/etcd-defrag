@@ -11,7 +11,7 @@ spec:
         spec:
           containers:
           - name: etcd-defrag
-            image: ghcr.io/ahrtr/etcd-defrag:v0.4.0
+            image: ghcr.io/ahrtr/etcd-defrag:v0.9.0
             args:
             - --endpoints=https://127.0.0.1:2379
             - --cacert=/ca.crt
