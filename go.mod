@@ -8,7 +8,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20230803155134-cca200345ab2
 	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20230803155134-cca200345ab2
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0.0.20230803155134-cca200345ab2
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 )
 
