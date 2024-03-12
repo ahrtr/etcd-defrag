@@ -138,7 +138,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				}
 				continue
 			}
-			fmt.Fprintf(os.Stderr, "Evaluation result is false, so skipping endpoint: %s\n", ep)
+			fmt.Printf("Evaluation result is false, so skipping endpoint: %s\n", ep)
 			continue
 		}
 
