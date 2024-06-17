@@ -6,7 +6,7 @@ toolchain go1.22.4
 
 require (
 	github.com/maja42/goval v1.4.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
