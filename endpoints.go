@@ -3,12 +3,16 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"os"
 	"strings"
 
 	"go.etcd.io/etcd/client/pkg/v3/srv"
 	"golang.org/x/exp/slices"
 )
+
+var errBadScheme = errors.New("url scheme must be http or https")
 
 func endpointsWithLeaderAtEnd(gcfg globalConfig, statusList []epStatus) ([]string, error) {
 	eps, err := endpoints(gcfg)
@@ -40,6 +44,49 @@ func endpoints(gcfg globalConfig) ([]string, error) {
 	return endpointsFromCluster(gcfg)
 }
 
+func IsLocalEndpoint(ep string) (bool, error) {
+
+	if strings.HasPrefix(ep, "unix:") || strings.HasPrefix(ep, "unixs:") {
+		return true, nil
+	}
+
+	if strings.Contains(ep, "://") {
+		url, err := url.Parse(ep)
+		if err != nil {
+			return false, err
+		}
+		if url.Scheme != "http" && url.Scheme != "https" {
+			return false, errBadScheme
+		}
+
+		return isLocalEndpoint(url.Host)
+	}
+
+	return isLocalEndpoint(ep)
+}
+
+func isLocalEndpoint(ep string) (bool, error) {
+
+	hostStr, _, err := net.SplitHostPort(ep)
+	if err != nil {
+		return false, err
+	}
+
+	// lookup localhost
+	addrs, err := net.LookupHost(hostStr)
+	if err != nil {
+		return false, nil
+	}
+
+	for _, addr := range addrs {
+		ip := net.ParseIP(addr)
+		if ip != nil && ip.IsLoopback() {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 	memberlistResp, err := memberList(gcfg)
 	if err != nil {
@@ -50,7 +97,19 @@ func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 	for _, m := range memberlistResp.Members {
 		// learner member only serves Status and SerializableRead requests, just ignore it
 		if !m.GetIsLearner() {
-			eps = append(eps, m.ClientURLs...)
+			for _, ep := range m.ClientURLs {
+				// not append local endpoint when set excludeLocalhost
+				if gcfg.excludeLocalhost {
+					ok, err := IsLocalEndpoint(ep)
+					if err != nil {
+						return nil, err
+					}
+					if ok {
+						continue
+					}
+				}
+				eps = append(eps, ep)
+			}
 		}
 	}
 

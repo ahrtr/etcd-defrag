@@ -10,6 +10,7 @@ import (
 type globalConfig struct {
 	endpoints           []string
 	useClusterEndpoints bool
+	excludeLocalhost    bool
 
 	dialTimeout      time.Duration
 	commandTimeout   time.Duration
