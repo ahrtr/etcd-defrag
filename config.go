@@ -38,6 +38,8 @@ type globalConfig struct {
 	defragRule   string
 
 	printVersion bool
+
+	dryRun bool
 }
 
 func clientConfigWithoutEndpoints(gcfg globalConfig) *clientv3.ConfigSpec {
