@@ -51,6 +51,8 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().StringVar(&globalCfg.defragRule, "defrag-rule", "", "defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)")
 
 	defragCmd.Flags().BoolVar(&globalCfg.printVersion, "version", false, "print the version and exit")
+
+	defragCmd.Flags().BoolVar(&globalCfg.dryRun, "dry-run", false, "evaluate whether or not endpoints require defragmentation, but don't actually perform it")
 	return defragCmd
 }
 
@@ -79,6 +81,10 @@ func printVersion(printVersion bool) {
 func defragCommandFunc(cmd *cobra.Command, args []string) {
 	printVersion(globalCfg.printVersion)
 
+	if globalCfg.dryRun {
+		fmt.Println("Using dry run mode, will not perform defragmentation")
+	}
+
 	fmt.Println("Validating configuration.")
 	if err := validateConfig(cmd, globalCfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Validating configuration failed: %v\n", err)
@@ -103,7 +109,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if globalCfg.compaction {
+	if globalCfg.compaction && !globalCfg.dryRun {
 		fmt.Printf("Running compaction until revision: %d ... ", statusList[0].Resp.Header.Revision)
 		if err := compact(globalCfg, statusList[0].Resp.Header.Revision, eps[0]); err != nil {
 			fmt.Printf("failed, %v\n", err)
@@ -139,6 +145,11 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				continue
 			}
 			fmt.Printf("Evaluation result is false, so skipping endpoint: %s\n", ep)
+			continue
+		}
+
+		if globalCfg.dryRun {
+			fmt.Printf("[Dry run] skip defragmenting endpoint %q\n", ep)
 			continue
 		}
 
