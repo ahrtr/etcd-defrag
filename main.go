@@ -149,6 +149,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		}
 
 		if globalCfg.dryRun {
+			fmt.Printf("[Dry run] skip defragmenting endpoint %q\n", ep)
 			continue
 		}
 
