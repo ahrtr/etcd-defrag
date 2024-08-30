@@ -57,6 +57,7 @@ Flags:
       --dial-timeout duration          dial timeout for client connections (default 2s)
   -d, --discovery-srv string           domain name to query for SRV records describing cluster endpoints
       --discovery-srv-name string      service name to query when using DNS discovery
+      --dry-run                        evaluate whether or not endpoints require defragmentation, but don't actually perform it
       --endpoints strings              comma separated etcd endpoints (default [127.0.0.1:2379])
       --etcd-storage-quota-bytes int   etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes) (default 2147483648)
   -h, --help                           help for etcd-defrag
