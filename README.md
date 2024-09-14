@@ -60,6 +60,7 @@ Flags:
       --dry-run                        evaluate whether or not endpoints require defragmentation, but don't actually perform it
       --endpoints strings              comma separated etcd endpoints (default [127.0.0.1:2379])
       --etcd-storage-quota-bytes int   etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes) (default 2147483648)
+      --exclude-localhost              whether to exclude localhost endpoints
   -h, --help                           help for etcd-defrag
       --insecure-discovery             accept insecure SRV records describing cluster endpoints (default true)
       --insecure-skip-tls-verify       skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)
