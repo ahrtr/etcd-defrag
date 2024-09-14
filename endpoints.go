@@ -44,12 +44,12 @@ func endpoints(gcfg globalConfig) ([]string, error) {
 	return endpointsFromCluster(gcfg)
 }
 
-func IsLocalEndpoint(ep string) (bool, error) {
-
+func isLocalEndpoint(ep string) (bool, error) {
 	if strings.HasPrefix(ep, "unix:") || strings.HasPrefix(ep, "unixs:") {
 		return true, nil
 	}
 
+	hostPort := ep
 	if strings.Contains(ep, "://") {
 		url, err := url.Parse(ep)
 		if err != nil {
@@ -59,31 +59,23 @@ func IsLocalEndpoint(ep string) (bool, error) {
 			return false, errBadScheme
 		}
 
-		return isLocalEndpoint(url.Host)
+		hostPort = url.Host
 	}
 
-	return isLocalEndpoint(ep)
-}
-
-func isLocalEndpoint(ep string) (bool, error) {
-
-	hostStr, _, err := net.SplitHostPort(ep)
+	hostname, _, err := net.SplitHostPort(hostPort)
 	if err != nil {
 		return false, err
 	}
 
-	// lookup localhost
-	addrs, err := net.LookupHost(hostStr)
-	if err != nil {
-		return false, nil
+	if strings.EqualFold(hostname, "localhost") {
+		return true, nil
 	}
 
-	for _, addr := range addrs {
-		ip := net.ParseIP(addr)
-		if ip != nil && ip.IsLoopback() {
-			return true, nil
-		}
+	ip := net.ParseIP(hostname)
+	if ip != nil && ip.IsLoopback() {
+		return true, nil
 	}
+
 	return false, nil
 }
 
@@ -98,9 +90,9 @@ func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 		// learner member only serves Status and SerializableRead requests, just ignore it
 		if !m.GetIsLearner() {
 			for _, ep := range m.ClientURLs {
-				// not append local endpoint when set excludeLocalhost
+				// Do not append loopback endpoints when `--exclude-localhost` is set.
 				if gcfg.excludeLocalhost {
-					ok, err := IsLocalEndpoint(ep)
+					ok, err := isLocalEndpoint(ep)
 					if err != nil {
 						return nil, err
 					}

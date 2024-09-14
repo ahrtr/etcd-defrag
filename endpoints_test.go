@@ -267,7 +267,7 @@ func TestIsLocalEp(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			if ok, err := IsLocalEndpoint(testcase.ep); err != testcase.err || ok != testcase.desire {
+			if ok, err := isLocalEndpoint(testcase.ep); err != testcase.err || ok != testcase.desire {
 				t.Errorf("expected %v, got err: %v result: %v", testcase.desire, err, ok)
 			}
 		})
