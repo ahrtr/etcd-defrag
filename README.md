@@ -37,6 +37,8 @@ It adds the following extra flags,
 | `--continue-on-error`        | whether continue to defragment next endpoint if current one fails, defaults to `true` |
 | `--etcd-storage-quota-bytes` | etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes), defaults to `2*1024*1024*1024` |
 | `--defrag-rule`              | defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true), defaults to empty. See more details below. |
+| `--dry-run`                  | evaluate whether or not endpoints require defragmentation, but don't actually perform it, defaults to `false`. |
+| `--exclude-localhost`        | whether to exclude localhost endpoints, defaults to `false`. |
 
 See the complete flags below,
 ```
