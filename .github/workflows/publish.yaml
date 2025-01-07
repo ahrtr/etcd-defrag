@@ -26,5 +26,9 @@ jobs:
         run: |
           export COMMIT=${{ github.sha}}
           export TAG=$(echo ${{ github.ref }} | cut -d "/" -f 3 - )
-          ko publish ./ --base-import-paths --platform=linux/amd64,linux/arm64 --tags $TAG
-          ko publish ./ --base-import-paths --platform=linux/amd64,linux/arm64
+          ko publish ./ --base-import-paths --platform=linux/amd64,linux/arm64 --tags latest,$TAG \
+            --image-label org.opencontainers.image.source="https://github.com/ahrtr/etcd-defrag" \
+            --image-label org.opencontainers.image.created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --image-label org.opencontainers.image.authors="ahrtr" \
+            --image-label org.opencontainers.image.url="https://ghcr.io/ahrtr/etcd-defrag" \
+            --image-label org.opencontainers.image.vendor="ahrtr"
