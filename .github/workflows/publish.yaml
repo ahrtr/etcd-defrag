@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ needs.goversion.outputs.goversion }}
-      - uses: ko-build/setup-ko@v0.7
+      - uses: ko-build/setup-ko@v0.8
         name: Setup ko
       - name: Run ko publish for ghcr.io
         env:
