@@ -225,7 +225,7 @@ func defragment(gcfg globalConfig, ep string) error {
 	return err
 }
 
-func transferLeadership(gcfg globalConfig, leaderEp string, newLeader epStatus) error {
+func transferLeadership(gcfg globalConfig, leaderEp string, transfereeID uint64) error {
 	cfgSpec := clientConfigWithoutEndpoints(gcfg)
 	cfgSpec.Endpoints = []string{leaderEp}
 	c, err := createClient(cfgSpec)
@@ -237,12 +237,12 @@ func transferLeadership(gcfg globalConfig, leaderEp string, newLeader epStatus) 
 	ctx, cancel := commandCtx(gcfg.commandTimeout)
 	defer cancel()
 
-	fmt.Printf("Requesting leader at %s to transfer leadership to %s...\n", leaderEp, newLeader.Ep)
-	_, err = c.MoveLeader(ctx, newLeader.Resp.Header.MemberId)
+	fmt.Printf("Requesting leader at %s to transfer leadership to member ID %d...\n", leaderEp, transfereeID)
+	_, err = c.MoveLeader(ctx, transfereeID)
 	if err != nil {
 		return fmt.Errorf("failed to move leader: %w", err)
 	}
 
-	fmt.Println("successfully transferred leadership from", leaderEp, "to", newLeader.Ep)
+	fmt.Println("successfully transferred leadership from", leaderEp, "to member ID ", transfereeID)
 	return nil
 }

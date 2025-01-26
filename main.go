@@ -161,15 +161,15 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				fmt.Printf("Member %q is the leader. Attempting to move the leader...\n", ep)
 
 				// Identify a non-leader member to transfer the leadership
-				var newLeader epStatus
+				newLeaderID := uint64(0)
 				for _, memberStatus := range statusList {
 					if memberStatus.Resp.Header.MemberId != status.Resp.Header.MemberId {
-						newLeader = memberStatus
+						newLeaderID = memberStatus.Resp.Header.MemberId
 						break
 					}
 				}
 
-				if newLeader == (epStatus{}) {
+				if newLeaderID == 0 {
 					failures++
 					fmt.Fprintf(os.Stderr, "Failed to find a non-leader member to transfer leadership from %q.\n", ep)
 					if !globalCfg.continueOnError {
@@ -179,10 +179,10 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				}
 
 				// Perform the leader transfer
-				err = transferLeadership(globalCfg, status.Ep, newLeader)
+				err = transferLeadership(globalCfg, status.Ep, newLeaderID)
 				if err != nil {
 					failures++
-					fmt.Fprintf(os.Stderr, "Failed to move leader from %s to %s: %v\n", status.Ep, newLeader.Ep, err)
+					fmt.Fprintf(os.Stderr, "Failed to move leader from %s to member ID %d: %v\n", status.Ep, newLeaderID, err)
 					if !globalCfg.continueOnError {
 						break
 					}
