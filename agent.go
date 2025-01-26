@@ -234,7 +234,6 @@ func transferLeadership(gcfg globalConfig, leaderEp string, newLeader epStatus) 
 	}
 	defer c.Close()
 
-	// Step 3: Use the MoveLeader method to transfer leadership
 	ctx, cancel := commandCtx(gcfg.commandTimeout)
 	defer cancel()
 
@@ -244,7 +243,6 @@ func transferLeadership(gcfg globalConfig, leaderEp string, newLeader epStatus) 
 		return fmt.Errorf("failed to move leader: %w", err)
 	}
 
-	// Step 4: Confirm success
 	fmt.Println("successfully transferred leadership from", leaderEp, "to", newLeader.Ep)
 	return nil
 }
