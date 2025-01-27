@@ -24,7 +24,7 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", []string{"127.0.0.1:2379"}, "comma separated etcd endpoints")
 	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
 	defragCmd.Flags().BoolVar(&globalCfg.excludeLocalhost, "exclude-localhost", false, "whether to exclude localhost endpoints")
-	defragCmd.Flags().BoolVar(&globalCfg.moveLeader, "move-leader", false, "whether to move the leader to a randomly picked non-leader ID and make it the new leader")
+	defragCmd.Flags().BoolVar(&globalCfg.moveLeader, "move-leader", false, "whether to move the leadership before performing defragmentation on the leader")
 
 	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", 2*time.Second, "dial timeout for client connections")
 	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", 30*time.Second, "command timeout (excluding dial timeout)")
@@ -158,31 +158,9 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		// Check if the member is a leader and move the leader if necessary
 		if globalCfg.moveLeader {
 			if status.Resp.Leader == status.Resp.Header.MemberId {
-				fmt.Printf("Member %q is the leader. Attempting to move the leader...\n", ep)
-
-				// Identify a non-leader member to transfer the leadership
-				newLeaderID := uint64(0)
-				for _, memberStatus := range statusList {
-					if memberStatus.Resp.Header.MemberId != status.Resp.Header.MemberId {
-						newLeaderID = memberStatus.Resp.Header.MemberId
-						break
-					}
-				}
-
-				if newLeaderID == 0 {
-					failures++
-					fmt.Fprintf(os.Stderr, "Failed to find a non-leader member to transfer leadership from %q.\n", ep)
-					if !globalCfg.continueOnError {
-						break
-					}
-					continue
-				}
-
-				// Perform the leader transfer
-				err = transferLeadership(globalCfg, status.Ep, newLeaderID)
-				if err != nil {
-					failures++
-					fmt.Fprintf(os.Stderr, "Failed to move leader from %s to member ID %d: %v\n", status.Ep, newLeaderID, err)
+				fmt.Println("Transferring the leadership from the current leader")
+				if err = moveLeader(globalCfg, status.Resp.Leader, ep); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to transfer the leadership from %x to a follower, error: %v\n", status.Resp.Leader, err)
 					if !globalCfg.continueOnError {
 						break
 					}
@@ -290,4 +268,32 @@ func getMemberStatus(gcfg globalConfig, ep string) (epStatus, error) {
 	}
 	fmt.Println(status.String())
 	return status, nil
+}
+
+func moveLeader(gcfg globalConfig, leaderID uint64, leaderEndpoint string) error {
+	memberlistResp, err := memberList(gcfg)
+	if err != nil {
+		return fmt.Errorf("failed to get member list: %w", err)
+	}
+
+	if len(memberlistResp.Members) == 1 {
+		fmt.Println("Skip moving leader as there is only one member in the cluster")
+		return nil
+	}
+
+	// pick up a follower to transfer the leadership to
+	newLeaderID := uint64(0)
+	for _, m := range memberlistResp.Members {
+		if m.ID != leaderID {
+			newLeaderID = m.ID
+			break
+		}
+	}
+
+	if newLeaderID == 0 {
+		return fmt.Errorf("coundn't find a follower in the %d member cluster", len(memberlistResp.Members))
+	}
+
+	fmt.Printf("Transferring the leadership from %x to %x\n", leaderID, newLeaderID)
+	return transferLeadership(globalCfg, leaderEndpoint, newLeaderID)
 }

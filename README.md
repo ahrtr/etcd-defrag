@@ -39,7 +39,7 @@ It adds the following extra flags,
 | `--defrag-rule`              | defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true), defaults to empty. See more details below. |
 | `--dry-run`                  | evaluate whether or not endpoints require defragmentation, but don't actually perform it, defaults to `false`. |
 | `--exclude-localhost`        | whether to exclude localhost endpoints, defaults to `false`. |
-| `--move-leader`              | whether to move the leader to a randomly picked non-leader ID and make it the new leader, defaults to `false`. |
+| `--move-leader`              | whether to move the leadership before performing defragmentation on the leader, defaults to `false`. |
 
 See the complete flags below,
 ```
@@ -71,7 +71,7 @@ Flags:
       --keepalive-time duration        keepalive time for client connections (default 2s)
       --keepalive-timeout duration     keepalive timeout for client connections (default 6s)
       --key string                     identify secure client using this TLS key file
-      --move-leader                    whether to move the leader to a randomly picked non-leader ID and make it the new leader
+      --move-leader                    whether to move the leadership before performing defragmentation on the leader
       --password string                password for authentication (if this option is used, --user option shouldn't include password)
       --user string                    username[:password] for authentication (prompt if password is not supplied)
       --version                        print the version and exit
