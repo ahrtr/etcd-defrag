@@ -11,6 +11,7 @@ type globalConfig struct {
 	endpoints           []string
 	useClusterEndpoints bool
 	excludeLocalhost    bool
+	moveLeader 			bool
 
 	dialTimeout      time.Duration
 	commandTimeout   time.Duration

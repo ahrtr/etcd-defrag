@@ -224,3 +224,25 @@ func defragment(gcfg globalConfig, ep string) error {
 	_, err = c.Defragment(ctx, ep)
 	return err
 }
+
+func transferLeadership(gcfg globalConfig, leaderEp string, transfereeID uint64) error {
+	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec.Endpoints = []string{leaderEp}
+	c, err := createClient(cfgSpec)
+	if err != nil {
+		return fmt.Errorf("failed to create client for leader endpoint %s: %w", leaderEp, err)
+	}
+	defer c.Close()
+
+	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	defer cancel()
+
+	fmt.Printf("Requesting leader at %s to transfer leadership to member ID %d...\n", leaderEp, transfereeID)
+	_, err = c.MoveLeader(ctx, transfereeID)
+	if err != nil {
+		return fmt.Errorf("failed to move leader: %w", err)
+	}
+
+	fmt.Println("successfully transferred leadership from", leaderEp, "to member ID ", transfereeID)
+	return nil
+}
