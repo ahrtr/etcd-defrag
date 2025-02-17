@@ -6,7 +6,7 @@ toolchain go1.22.12
 
 require (
 	github.com/maja42/goval v1.4.0
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.1
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
@@ -21,7 +21,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
