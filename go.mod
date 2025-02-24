@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.6
 
 require (
-	github.com/maja42/goval v1.4.0
+	github.com/maja42/goval v1.6.0
 	github.com/spf13/cobra v1.9.1
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
