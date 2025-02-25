@@ -188,6 +188,13 @@ func TestEvaluate(t *testing.T) {
 			dbSizeInUse:      60,
 			evaluationResult: true,
 		},
+		{
+			name:             "expression evaluation result shouldn't round to 0",
+			rule:             "dbSizeInUse / dbSize < 0.5",
+			dbSizeInUse:      60,
+			dbSize:           81,
+			evaluationResult: false,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
