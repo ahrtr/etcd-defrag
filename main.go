@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -18,44 +20,79 @@ func newDefragCommand() *cobra.Command {
 	defragCmd := &cobra.Command{
 		Use:   "etcd-defrag",
 		Short: "A simple command line tool for etcd defragmentation",
-		Run:   defragCommandFunc,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return viper.BindPFlags(cmd.Flags())
+		},
+		Run: defragCommandFunc,
 	}
+	setDefaults()
 
-	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", []string{"127.0.0.1:2379"}, "comma separated etcd endpoints")
-	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", false, "use all endpoints from the cluster member list")
-	defragCmd.Flags().BoolVar(&globalCfg.excludeLocalhost, "exclude-localhost", false, "whether to exclude localhost endpoints")
-	defragCmd.Flags().BoolVar(&globalCfg.moveLeader, "move-leader", false, "whether to move the leadership before performing defragmentation on the leader")
+	// Manually splitting, because GetStringSlice has inconsistent behavior for splitting command line flags and environment variables
+	// https://github.com/spf13/viper/issues/380
+	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", strings.Split(viper.GetString("endpoints"), ","), "comma separated etcd endpoints")
 
-	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", 2*time.Second, "dial timeout for client connections")
-	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", 30*time.Second, "command timeout (excluding dial timeout)")
-	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTime, "keepalive-time", 2*time.Second, "keepalive time for client connections")
-	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTimeout, "keepalive-timeout", 6*time.Second, "keepalive timeout for client connections")
+	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", viper.GetBool("cluster"), "use all endpoints from the cluster member list")
+	defragCmd.Flags().BoolVar(&globalCfg.excludeLocalhost, "exclude-localhost", viper.GetBool("exclude-localhost"), "whether to exclude localhost endpoints")
+	defragCmd.Flags().BoolVar(&globalCfg.moveLeader, "move-leader", viper.GetBool("move-leader"), "whether to move the leadership before performing defragmentation on the leader")
 
-	defragCmd.Flags().BoolVar(&globalCfg.insecure, "insecure-transport", true, "disable transport security for client connections")
+	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", viper.GetDuration("dial-timeout"), "dial timeout for client connections")
+	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", viper.GetDuration("command-timeout"), "command timeout (excluding dial timeout)")
+	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTime, "keepalive-time", viper.GetDuration("keepalive-time"), "keepalive time for client connections")
+	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTimeout, "keepalive-timeout", viper.GetDuration("keepalive-timeout"), "keepalive timeout for client connections")
 
-	defragCmd.Flags().BoolVar(&globalCfg.insecureSkepVerify, "insecure-skip-tls-verify", false, "skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)")
-	defragCmd.Flags().StringVar(&globalCfg.certFile, "cert", "", "identify secure client using this TLS certificate file")
-	defragCmd.Flags().StringVar(&globalCfg.keyFile, "key", "", "identify secure client using this TLS key file")
-	defragCmd.Flags().StringVar(&globalCfg.caFile, "cacert", "", "verify certificates of TLS-enabled secure servers using this CA bundle")
+	defragCmd.Flags().BoolVar(&globalCfg.insecure, "insecure-transport", viper.GetBool("insecure-transport"), "disable transport security for client connections")
 
-	defragCmd.Flags().StringVar(&globalCfg.username, "user", "", "username[:password] for authentication (prompt if password is not supplied)")
-	defragCmd.Flags().StringVar(&globalCfg.password, "password", "", "password for authentication (if this option is used, --user option shouldn't include password)")
+	defragCmd.Flags().BoolVar(&globalCfg.insecureSkepVerify, "insecure-skip-tls-verify", viper.GetBool("insecure-skip-tls-verify"), "skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)")
+	defragCmd.Flags().StringVar(&globalCfg.certFile, "cert", viper.GetString("cert"), "identify secure client using this TLS certificate file")
+	defragCmd.Flags().StringVar(&globalCfg.keyFile, "key", viper.GetString("key"), "identify secure client using this TLS key file")
+	defragCmd.Flags().StringVar(&globalCfg.caFile, "cacert", viper.GetString("cacert"), "verify certificates of TLS-enabled secure servers using this CA bundle")
 
-	defragCmd.Flags().StringVarP(&globalCfg.dnsDomain, "discovery-srv", "d", "", "domain name to query for SRV records describing cluster endpoints")
-	defragCmd.Flags().StringVarP(&globalCfg.dnsService, "discovery-srv-name", "", "", "service name to query when using DNS discovery")
-	defragCmd.Flags().BoolVar(&globalCfg.insecureDiscovery, "insecure-discovery", true, "accept insecure SRV records describing cluster endpoints")
+	defragCmd.Flags().StringVar(&globalCfg.username, "user", viper.GetString("user"), "username[:password] for authentication (prompt if password is not supplied)")
+	defragCmd.Flags().StringVar(&globalCfg.password, "password", viper.GetString("password"), "password for authentication (if this option is used, --user option shouldn't include password)")
 
-	defragCmd.Flags().BoolVar(&globalCfg.compaction, "compaction", true, "whether execute compaction before the defragmentation (defaults to true)")
+	defragCmd.Flags().StringVarP(&globalCfg.dnsDomain, "discovery-srv", "d", viper.GetString("discovery-srv"), "domain name to query for SRV records describing cluster endpoints")
+	defragCmd.Flags().StringVarP(&globalCfg.dnsService, "discovery-srv-name", "", viper.GetString("discovery-srv-name"), "service name to query when using DNS discovery")
+	defragCmd.Flags().BoolVar(&globalCfg.insecureDiscovery, "insecure-discovery", viper.GetBool("insecure-discovery"), "accept insecure SRV records describing cluster endpoints")
 
-	defragCmd.Flags().BoolVar(&globalCfg.continueOnError, "continue-on-error", true, "whether continue to defragment next endpoint if current one fails")
+	defragCmd.Flags().BoolVar(&globalCfg.compaction, "compaction", viper.GetBool("compaction"), "whether execute compaction before the defragmentation (defaults to true)")
 
-	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", 2*1024*1024*1024, "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
-	defragCmd.Flags().StringVar(&globalCfg.defragRule, "defrag-rule", "", "defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)")
+	defragCmd.Flags().BoolVar(&globalCfg.continueOnError, "continue-on-error", viper.GetBool("continue-on-error"), "whether continue to defragment next endpoint if current one fails")
 
-	defragCmd.Flags().BoolVar(&globalCfg.printVersion, "version", false, "print the version and exit")
+	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", viper.GetInt("etcd-storage-quota-bytes"), "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
+	defragCmd.Flags().StringVar(&globalCfg.defragRule, "defrag-rule", viper.GetString("defrag-rule"), "defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)")
 
-	defragCmd.Flags().BoolVar(&globalCfg.dryRun, "dry-run", false, "evaluate whether or not endpoints require defragmentation, but don't actually perform it")
+	defragCmd.Flags().BoolVar(&globalCfg.printVersion, "version", viper.GetBool("version"), "print the version and exit")
+
+	defragCmd.Flags().BoolVar(&globalCfg.dryRun, "dry-run", viper.GetBool("dry-run"), "evaluate whether or not endpoints require defragmentation, but don't actually perform it")
+
 	return defragCmd
+}
+
+func setDefaults() {
+	viper.SetDefault("endpoints", "127.0.0.1:2379")
+	viper.SetDefault("cluster", false)
+	viper.SetDefault("exclude-localhost", false)
+	viper.SetDefault("move-leader", false)
+	viper.SetDefault("dial-timeout", 2*time.Second)
+	viper.SetDefault("command-timeout", 30*time.Second)
+	viper.SetDefault("keepalive-time", 2*time.Second)
+	viper.SetDefault("keepalive-timeout", 6*time.Second)
+	viper.SetDefault("insecure-transport", true)
+	viper.SetDefault("insecure-skip-tls-verify", false)
+	viper.SetDefault("cert", "")
+	viper.SetDefault("key", "")
+	viper.SetDefault("cacert", "")
+	viper.SetDefault("user", "")
+	viper.SetDefault("password", "")
+	viper.SetDefault("discovery-srv", "")
+	viper.SetDefault("discovery-srv-name", "")
+	viper.SetDefault("insecure-discovery", true)
+	viper.SetDefault("compaction", true)
+	viper.SetDefault("continue-on-error", true)
+	viper.SetDefault("etcd-storage-quota-bytes", 2*1024*1024*1024)
+	viper.SetDefault("defrag-rule", "")
+	viper.SetDefault("version", false)
+	viper.SetDefault("dry-run", false)
 }
 
 func main() {
