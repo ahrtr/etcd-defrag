@@ -77,6 +77,14 @@ Flags:
       --version                        print the version and exit
 ```
 
+Environment variables can be used to set the flags, by setting the flag name in uppercase and prefixing it with `ETCD_DEFRAG_`. Please note that all hyphens should be replaced with underscores. For example, the flag `--move-leader` can be set with the environment variable `ETCD_DEFRAG_MOVE_LEADER`
+
+Flag values are evaluated in the following order: (from highest to lowest priority)
+
+1. Flags passed as command line arguments
+2. Environment variables
+3. Default values
+
 ## Integration with Kubernetes with a CronJob
 
 It is possible to use [the example cronjob in
@@ -116,9 +124,9 @@ Output:
 Validating configuration.
 No defragmentation rule provided
 Performing health check.
-endpoint: https://127.0.0.1:2379, health: true, took: 4.702492ms, error: 
-endpoint: https://127.0.0.1:22379, health: true, took: 5.017075ms, error: 
-endpoint: https://127.0.0.1:32379, health: true, took: 4.747068ms, error: 
+endpoint: https://127.0.0.1:2379, health: true, took: 4.702492ms, error:
+endpoint: https://127.0.0.1:22379, health: true, took: 5.017075ms, error:
+endpoint: https://127.0.0.1:32379, health: true, took: 4.747068ms, error:
 Getting members status
 endpoint: https://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 126976, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
 endpoint: https://127.0.0.1:22379, dbSize: 122880, dbSizeInUse: 122880, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
@@ -156,8 +164,8 @@ $ etcdctl endpoint status -w table --cluster
 +-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
 ```
 ## Defragmentation rule
-Defragmentation is an expensive operation, so it should be executed as infrequent as possible. On the other hand, 
-it's also necessary to make sure any etcd member will not run out of the storage quota. It's exactly the reason 
+Defragmentation is an expensive operation, so it should be executed as infrequent as possible. On the other hand,
+it's also necessary to make sure any etcd member will not run out of the storage quota. It's exactly the reason
 why the defragmentation rule is introduced, it can skip unnecessary expensive defragmentation, and also keep
 each member safe.
 
@@ -190,9 +198,9 @@ Output:
 Validating configuration.
 Validating the defragmentation rule: dbSize > dbQuota*80/100 || dbSize - dbSizeInUse > 200*1024*1024 ... valid
 Performing health check.
-endpoint: http://127.0.0.1:2379, health: true, took: 6.993264ms, error: 
-endpoint: http://127.0.0.1:32379, health: true, took: 7.483368ms, error: 
-endpoint: http://127.0.0.1:22379, health: true, took: 49.441931ms, error: 
+endpoint: http://127.0.0.1:2379, health: true, took: 6.993264ms, error:
+endpoint: http://127.0.0.1:32379, health: true, took: 7.483368ms, error:
+endpoint: http://127.0.0.1:22379, health: true, took: 49.441931ms, error:
 Getting members status
 endpoint: http://127.0.0.1:2379, dbSize: 131072, dbSizeInUse: 131072, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11028
 endpoint: http://127.0.0.1:22379, dbSize: 131072, dbSizeInUse: 131072, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11028
