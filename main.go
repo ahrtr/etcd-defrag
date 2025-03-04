@@ -25,6 +25,10 @@ func newDefragCommand() *cobra.Command {
 		},
 		Run: defragCommandFunc,
 	}
+
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.SetEnvPrefix("ETCD_DEFRAG")
+	viper.AutomaticEnv()
 	setDefaults()
 
 	// Manually splitting, because GetStringSlice has inconsistent behavior for splitting command line flags and environment variables
