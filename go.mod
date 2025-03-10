@@ -8,7 +8,7 @@ require (
 	github.com/maja42/goval v1.6.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
