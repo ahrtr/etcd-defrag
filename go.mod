@@ -1,8 +1,7 @@
 module github.com/ahrtr/etcd-defrag
 
 go 1.23
-
-toolchain go1.23.7
+toolchain go1.24.1
 
 require (
 	github.com/maja42/goval v1.6.0
@@ -10,7 +9,7 @@ require (
 	github.com/spf13/viper v1.20.0
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/api/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
-	go.etcd.io/etcd/client/pkg/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
+	go.etcd.io/etcd/client/pkg/v3 v3.6.0-rc.2
 	go.etcd.io/etcd/client/v3 v3.6.0-alpha.0.0.20240409070941-65ac859a1b61
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
@@ -36,7 +35,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
