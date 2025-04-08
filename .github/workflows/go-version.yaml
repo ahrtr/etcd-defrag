@@ -1,7 +1,7 @@
 name: Go version setup
 
 env:
-  GO_VERSION: "1.23.7"
+  GO_VERSION: "1.23.8"
 
 on:
   workflow_call:
