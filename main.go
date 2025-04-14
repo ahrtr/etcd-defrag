@@ -211,9 +211,9 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Printf("Defragmenting endpoint %q\n", ep)
-		startTs := time.Now()
+		startTS := time.Now()
 		err = defragment(globalCfg, ep)
-		d := time.Since(startTs)
+		d := time.Since(startTS)
 		if err != nil {
 			failures++
 			fmt.Fprintf(os.Stderr, "Failed to defragment etcd member %q. took %s. (%v)\n", ep, d.String(), err)
