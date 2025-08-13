@@ -1,8 +1,8 @@
 module github.com/ahrtr/etcd-defrag
 
-go 1.23.0
+go 1.24
 
-toolchain go1.23.11
+toolchain go1.24.6
 
 require (
 	github.com/maja42/goval v1.6.0
