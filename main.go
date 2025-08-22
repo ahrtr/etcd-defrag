@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"strings"
@@ -103,7 +104,7 @@ func main() {
 	defragCmd := newDefragCommand()
 	if err := defragCmd.Execute(); err != nil {
 		if defragCmd.SilenceErrors {
-			fmt.Fprintln(os.Stderr, "Error:", err)
+			log.Println("Error:", err)
 			os.Exit(1)
 		} else {
 			os.Exit(1)
@@ -125,52 +126,52 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	printVersion(globalCfg.printVersion)
 
 	if globalCfg.dryRun {
-		fmt.Println("Using dry run mode, will not perform defragmentation")
+		log.Println("Using dry run mode, will not perform defragmentation")
 	}
 
-	fmt.Println("Validating configuration.")
+	log.Println("Validating configuration.")
 	if err := validateConfig(cmd, globalCfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Validating configuration failed: %v\n", err)
+		log.Printf("Validating configuration failed: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Performing health check.")
+	log.Println("Performing health check.")
 	if !healthCheck(globalCfg) {
 		os.Exit(1)
 	}
 
-	fmt.Println("Getting members status")
+	log.Println("Getting members status")
 	statusList, err := getMembersStatus(globalCfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get members status: %v\n", err)
+		log.Printf("Failed to get members status: %v\n", err)
 		os.Exit(1)
 	}
 
 	eps, err := endpointsWithLeaderAtEnd(globalCfg, statusList)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get endpoints: %v\n", err)
+		log.Printf("Failed to get endpoints: %v\n", err)
 		os.Exit(1)
 	}
 
 	if globalCfg.compaction && !globalCfg.dryRun {
-		fmt.Printf("Running compaction until revision: %d ... ", statusList[0].Resp.Header.Revision)
+		log.Printf("Running compaction until revision: %d ... ", statusList[0].Resp.Header.Revision)
 		if err := compact(globalCfg, statusList[0].Resp.Header.Revision, eps[0]); err != nil {
-			fmt.Printf("failed, %v\n", err)
+			log.Printf("failed, %v\n", err)
 		} else {
-			fmt.Println("successful")
+			log.Println("successful")
 		}
 	} else {
-		fmt.Println("Skip compaction.")
+		log.Println("Skip compaction.")
 	}
 
-	fmt.Printf("%d endpoint(s) need to be defragmented: %v\n", len(eps), eps)
+	log.Printf("%d endpoint(s) need to be defragmented: %v\n", len(eps), eps)
 	failures := 0
 	for _, ep := range eps {
-		fmt.Print("[Before defragmentation] ")
+		log.Print("[Before defragmentation] ")
 		status, err := getMemberStatus(globalCfg, ep)
 		if err != nil {
 			failures++
-			fmt.Fprintf(os.Stderr, "Failed to get member (%q) status, error: %v\n", ep, err)
+			log.Printf("Failed to get member (%q) status, error: %v\n", ep, err)
 			if !globalCfg.continueOnError {
 				break
 			}
@@ -181,27 +182,27 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		if !evalRet || err != nil {
 			if err != nil {
 				failures++
-				fmt.Fprintf(os.Stderr, "Evaluation failed, endpoint: %s, error:%v\n", ep, err)
+				log.Printf("Evaluation failed, endpoint: %s, error:%v\n", ep, err)
 				if !globalCfg.continueOnError {
 					break
 				}
 				continue
 			}
-			fmt.Printf("Evaluation result is false, so skipping endpoint: %s\n", ep)
+			log.Printf("Evaluation result is false, so skipping endpoint: %s\n", ep)
 			continue
 		}
 
 		if globalCfg.dryRun {
-			fmt.Printf("[Dry run] skip defragmenting endpoint %q\n", ep)
+			log.Printf("[Dry run] skip defragmenting endpoint %q\n", ep)
 			continue
 		}
 
 		// Check if the member is a leader and move the leader if necessary
 		if globalCfg.moveLeader {
 			if status.Resp.Leader == status.Resp.Header.MemberId {
-				fmt.Println("Transferring the leadership from the current leader")
+				log.Println("Transferring the leadership from the current leader")
 				if err = moveLeader(globalCfg, status.Resp.Leader, ep); err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to transfer the leadership from %x to a follower, error: %v\n", status.Resp.Leader, err)
+					log.Printf("Failed to transfer the leadership from %x to a follower, error: %v\n", status.Resp.Leader, err)
 					if !globalCfg.continueOnError {
 						break
 					}
@@ -210,26 +211,26 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		fmt.Printf("Defragmenting endpoint %q\n", ep)
+		log.Printf("Defragmenting endpoint %q\n", ep)
 		startTS := time.Now()
 		err = defragment(globalCfg, ep)
 		d := time.Since(startTS)
 		if err != nil {
 			failures++
-			fmt.Fprintf(os.Stderr, "Failed to defragment etcd member %q. took %s. (%v)\n", ep, d.String(), err)
+			log.Printf("Failed to defragment etcd member %q. took %s. (%v)\n", ep, d.String(), err)
 			if !globalCfg.continueOnError {
 				break
 			}
 			continue
 		} else {
-			fmt.Printf("Finished defragmenting etcd endpoint %q. took %s\n", ep, d.String())
+			log.Printf("Finished defragmenting etcd endpoint %q. took %s\n", ep, d.String())
 		}
 
-		fmt.Print("[Post defragmentation] ")
+		log.Print("[Post defragmentation] ")
 		_, err = getMemberStatus(globalCfg, ep)
 		if err != nil {
 			failures++
-			fmt.Fprintf(os.Stderr, "Failed to get member (%q) status, error: %v\n", ep, err)
+			log.Printf("Failed to get member (%q) status, error: %v\n", ep, err)
 			if !globalCfg.continueOnError {
 				break
 			}
@@ -237,10 +238,10 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 	if failures != 0 {
-		fmt.Fprintf(os.Stderr, "%d (total %d) endpoint(s) failed to be defragmented.\n", failures, len(eps))
+		log.Printf("%d (total %d) endpoint(s) failed to be defragmented.\n", failures, len(eps))
 		os.Exit(1)
 	}
-	fmt.Println("The defragmentation is successful.")
+	log.Println("The defragmentation is successful.")
 }
 
 func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
@@ -257,15 +258,15 @@ func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
 	}
 
 	if len(gcfg.defragRule) > 0 {
-		fmt.Printf("Validating the defragmentation rule: %v ... ", gcfg.defragRule)
+		log.Printf("Validating the defragmentation rule: %v ... ", gcfg.defragRule)
 
 		if err := validateRule(gcfg.defragRule); err != nil {
-			fmt.Println("invalid")
+			log.Println("invalid")
 			return fmt.Errorf("invalid rule %q, error: %w", gcfg.defragRule, err)
 		}
-		fmt.Println("valid")
+		log.Println("valid")
 	} else {
-		fmt.Println("No defragmentation rule provided")
+		log.Println("No defragmentation rule provided")
 	}
 
 	return nil
@@ -274,7 +275,7 @@ func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
 func healthCheck(gcfg globalConfig) bool {
 	healthInfos, err := clusterHealth(gcfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get members' health info: %v\n", err)
+		log.Printf("Failed to get members' health info: %v\n", err)
 		return false
 	}
 
@@ -284,7 +285,7 @@ func healthCheck(gcfg globalConfig) bool {
 			unhealthyCount++
 		}
 
-		fmt.Println(healthInfo.String())
+		log.Println(healthInfo.String())
 	}
 
 	return unhealthyCount == 0
@@ -297,7 +298,7 @@ func getMembersStatus(gcfg globalConfig) ([]epStatus, error) {
 	}
 
 	for _, status := range statusList {
-		fmt.Println(status.String())
+		log.Println(status.String())
 	}
 	return statusList, nil
 }
@@ -307,7 +308,7 @@ func getMemberStatus(gcfg globalConfig, ep string) (epStatus, error) {
 	if err != nil {
 		return epStatus{}, err
 	}
-	fmt.Println(status.String())
+	log.Println(status.String())
 	return status, nil
 }
 
@@ -318,7 +319,7 @@ func moveLeader(gcfg globalConfig, leaderID uint64, leaderEndpoint string) error
 	}
 
 	if len(memberlistResp.Members) == 1 {
-		fmt.Println("Skip moving leader as there is only one member in the cluster")
+		log.Println("Skip moving leader as there is only one member in the cluster")
 		return nil
 	}
 
@@ -335,6 +336,6 @@ func moveLeader(gcfg globalConfig, leaderID uint64, leaderEndpoint string) error
 		return fmt.Errorf("coundn't find a follower in the %d member cluster", len(memberlistResp.Members))
 	}
 
-	fmt.Printf("Transferring the leadership from %x to %x\n", leaderID, newLeaderID)
+	log.Printf("Transferring the leadership from %x to %x\n", leaderID, newLeaderID)
 	return transferLeadership(globalCfg, leaderEndpoint, newLeaderID)
 }

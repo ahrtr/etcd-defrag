@@ -2,10 +2,9 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"net"
 	"net/url"
-	"os"
 	"strings"
 
 	"go.etcd.io/etcd/client/pkg/v3/srv"
@@ -147,7 +146,7 @@ func endpointsFromDNSDiscovery(gcfg globalConfig) ([]string, error) {
 	var ret []string
 	for _, ep := range eps {
 		if strings.HasPrefix(ep, "http://") {
-			fmt.Fprintf(os.Stderr, "ignoring discovered insecure endpoint %q\n", ep)
+			log.Printf("ignoring discovered insecure endpoint %q\n", ep)
 			continue
 		}
 		ret = append(ret, ep)
