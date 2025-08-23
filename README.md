@@ -121,31 +121,38 @@ $ ./etcd-defrag --endpoints https://127.0.0.1:22379 --cluster --cacert ./ca.crt 
 ```
 Output:
 ```
-Validating configuration.
-No defragmentation rule provided
-Performing health check.
-endpoint: https://127.0.0.1:2379, health: true, took: 4.702492ms, error:
-endpoint: https://127.0.0.1:22379, health: true, took: 5.017075ms, error:
-endpoint: https://127.0.0.1:32379, health: true, took: 4.747068ms, error:
-Getting members status
-endpoint: https://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 126976, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
-endpoint: https://127.0.0.1:22379, dbSize: 122880, dbSizeInUse: 122880, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
-endpoint: https://127.0.0.1:32379, dbSize: 122880, dbSizeInUse: 122880, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10425
-Running compaction until revision: 10365 ... successful
-3 endpoint(s) need to be defragmented: [https://127.0.0.1:22379 https://127.0.0.1:32379 https://127.0.0.1:2379]
-[Before defragmentation] endpoint: https://127.0.0.1:22379, dbSize: 126976, dbSizeInUse: 90112, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-Defragmenting endpoint "https://127.0.0.1:22379"
-Finished defragmenting etcd endpoint "https://127.0.0.1:22379". took 224.151378ms
-[Post defragmentation] endpoint: https://127.0.0.1:22379, dbSize: 90112, dbSizeInUse: 81920, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-[Before defragmentation] endpoint: https://127.0.0.1:32379, dbSize: 126976, dbSizeInUse: 90112, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-Defragmenting endpoint "https://127.0.0.1:32379"
-Finished defragmenting etcd endpoint "https://127.0.0.1:32379". took 139.138035ms
-[Post defragmentation] endpoint: https://127.0.0.1:32379, dbSize: 90112, dbSizeInUse: 81920, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-[Before defragmentation] endpoint: https://127.0.0.1:2379, dbSize: 172032, dbSizeInUse: 94208, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-Defragmenting endpoint "https://127.0.0.1:2379"
-Finished defragmenting etcd endpoint "https://127.0.0.1:2379". took 135.171807ms
-[Post defragmentation] endpoint: https://127.0.0.1:2379, dbSize: 90112, dbSizeInUse: 81920, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10365, term: 2, index: 10426
-The defragmentation is successful.
+2025/08/23 13:00:04 Validating configuration.
+2025/08/23 13:00:04 No defragmentation rule provided
+2025/08/23 13:00:04 Performing health check.
+2025/08/23 13:00:04 endpoint: https://127.0.0.1:22379, health: true, took: 1.902417ms, error:
+2025/08/23 13:00:04 endpoint: https://127.0.0.1:2379, health: true, took: 1.893833ms, error:
+2025/08/23 13:00:04 endpoint: https://127.0.0.1:32379, health: true, took: 2.167917ms, error:
+2025/08/23 13:00:04 Getting members status
+2025/08/23 13:00:04 endpoint: https://127.0.0.1:22379, dbSize: 98304, dbSizeInUse: 98304, memberId: 91bc3c398fb3c146, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 22
+2025/08/23 13:00:04 endpoint: https://127.0.0.1:2379, dbSize: 98304, dbSizeInUse: 98304, memberId: 8211f1d0f64f3269, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 22
+2025/08/23 13:00:04 endpoint: https://127.0.0.1:32379, dbSize: 98304, dbSizeInUse: 98304, memberId: fd422379fda50e48, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 22
+2025/08/23 13:00:04 Running compaction until revision: 12 ...
+2025/08/23 13:00:05 successful
+2025/08/23 13:00:05 3 endpoint(s) need to be defragmented: [https://127.0.0.1:2379 https://127.0.0.1:32379 https://127.0.0.1:22379]
+2025/08/23 13:00:05 [Before defragmentation]
+2025/08/23 13:00:05 endpoint: https://127.0.0.1:2379, dbSize: 98304, dbSizeInUse: 98304, memberId: 8211f1d0f64f3269, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 23
+2025/08/23 13:00:05 Defragmenting endpoint "https://127.0.0.1:2379"
+2025/08/23 13:00:05 Finished defragmenting etcd endpoint "https://127.0.0.1:2379". took 28.41525ms
+2025/08/23 13:00:05 [Post defragmentation]
+2025/08/23 13:00:05 endpoint: https://127.0.0.1:2379, dbSize: 98304, dbSizeInUse: 65536, memberId: 8211f1d0f64f3269, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 23
+2025/08/23 13:00:05 [Before defragmentation]
+2025/08/23 13:00:05 endpoint: https://127.0.0.1:32379, dbSize: 98304, dbSizeInUse: 98304, memberId: fd422379fda50e48, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 23
+2025/08/23 13:00:05 Defragmenting endpoint "https://127.0.0.1:32379"
+2025/08/23 13:00:05 Finished defragmenting etcd endpoint "https://127.0.0.1:32379". took 27.834208ms
+2025/08/23 13:00:05 [Post defragmentation]
+2025/08/23 13:00:05 endpoint: https://127.0.0.1:32379, dbSize: 98304, dbSizeInUse: 65536, memberId: fd422379fda50e48, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 23
+2025/08/23 13:00:05 [Before defragmentation]
+2025/08/23 13:00:05 endpoint: https://127.0.0.1:22379, dbSize: 98304, dbSizeInUse: 98304, memberId: 91bc3c398fb3c146, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 23
+2025/08/23 13:00:05 Defragmenting endpoint "https://127.0.0.1:22379"
+2025/08/23 13:00:05 Finished defragmenting etcd endpoint "https://127.0.0.1:22379". took 43.494ms
+2025/08/23 13:00:05 [Post defragmentation]
+2025/08/23 13:00:05 endpoint: https://127.0.0.1:22379, dbSize: 98304, dbSizeInUse: 65536, memberId: 91bc3c398fb3c146, leader: 91bc3c398fb3c146, revision: 12, term: 2, index: 23
+2025/08/23 13:00:05 The defragmentation is successful.
 ```
 
 Only one endpoint is provided, but it still runs defragmentation on all members in the cluster thanks to the flag `--cluster`.
@@ -195,25 +202,30 @@ $ ./etcd-defrag --endpoints http://127.0.0.1:22379 --cluster --defrag-rule="dbQu
 
 Output:
 ```
-Validating configuration.
-Validating the defragmentation rule: dbSize > dbQuota*80/100 || dbSize - dbSizeInUse > 200*1024*1024 ... valid
-Performing health check.
-endpoint: http://127.0.0.1:2379, health: true, took: 6.993264ms, error:
-endpoint: http://127.0.0.1:32379, health: true, took: 7.483368ms, error:
-endpoint: http://127.0.0.1:22379, health: true, took: 49.441931ms, error:
-Getting members status
-endpoint: http://127.0.0.1:2379, dbSize: 131072, dbSizeInUse: 131072, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11028
-endpoint: http://127.0.0.1:22379, dbSize: 131072, dbSizeInUse: 131072, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11028
-endpoint: http://127.0.0.1:32379, dbSize: 131072, dbSizeInUse: 131072, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11028
-Running compaction until revision: 10964 ... successful
-3 endpoint(s) need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379 http://127.0.0.1:2379]
-[Before defragmentation] endpoint: http://127.0.0.1:22379, dbSize: 139264, dbSizeInUse: 90112, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11029
-Evaluation result is false, so skipping endpoint: http://127.0.0.1:22379
-[Before defragmentation] endpoint: http://127.0.0.1:32379, dbSize: 139264, dbSizeInUse: 139264, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11029
-Evaluation result is false, so skipping endpoint: http://127.0.0.1:32379
-[Before defragmentation] endpoint: http://127.0.0.1:2379, dbSize: 139264, dbSizeInUse: 90112, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 10964, term: 2, index: 11029
-Evaluation result is false, so skipping endpoint: http://127.0.0.1:2379
-The defragmentation is successful.
+2025/08/23 12:55:09 Validating configuration.
+2025/08/23 12:55:09 Validating the defragmentation rule: dbQuotaUsage > 0.8 || dbSizeFree > 200*1024*1024 ...
+2025/08/23 12:55:09 valid
+2025/08/23 12:55:09 Performing health check.
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:2379, health: true, took: 2.73825ms, error:
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:22379, health: true, took: 2.839ms, error:
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:32379, health: true, took: 2.96325ms, error:
+2025/08/23 12:55:09 Getting members status
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:22379, dbSize: 98304, dbSizeInUse: 98304, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9, term: 4, index: 44
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:2379, dbSize: 98304, dbSizeInUse: 98304, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 9, term: 4, index: 44
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:32379, dbSize: 98304, dbSizeInUse: 98304, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 9, term: 4, index: 44
+2025/08/23 12:55:09 Running compaction until revision: 9 ...
+2025/08/23 12:55:09 successful
+2025/08/23 12:55:09 3 endpoint(s) need to be defragmented: [http://127.0.0.1:22379 http://127.0.0.1:32379 http://127.0.0.1:2379]
+2025/08/23 12:55:09 [Before defragmentation]
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:22379, dbSize: 98304, dbSizeInUse: 98304, memberId: 91bc3c398fb3c146, leader: 8211f1d0f64f3269, revision: 9, term: 4, index: 45
+2025/08/23 12:55:09 Evaluation result is false, so skipping endpoint: http://127.0.0.1:22379
+2025/08/23 12:55:09 [Before defragmentation]
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:32379, dbSize: 98304, dbSizeInUse: 98304, memberId: fd422379fda50e48, leader: 8211f1d0f64f3269, revision: 9, term: 4, index: 45
+2025/08/23 12:55:09 Evaluation result is false, so skipping endpoint: http://127.0.0.1:32379
+2025/08/23 12:55:09 [Before defragmentation]
+2025/08/23 12:55:09 endpoint: http://127.0.0.1:2379, dbSize: 98304, dbSizeInUse: 98304, memberId: 8211f1d0f64f3269, leader: 8211f1d0f64f3269, revision: 9, term: 4, index: 45
+2025/08/23 12:55:09 Evaluation result is false, so skipping endpoint: http://127.0.0.1:2379
+2025/08/23 12:55:09 The defragmentation is successful.
 ```
 
 If you want to run defragmentation when both conditions are true, namely the total db size is greater than 80%
