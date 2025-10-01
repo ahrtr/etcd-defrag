@@ -70,6 +70,8 @@ func newDefragCommand() *cobra.Command {
 
 	defragCmd.Flags().BoolVar(&globalCfg.dryRun, "dry-run", viper.GetBool("dry-run"), "evaluate whether or not endpoints require defragmentation, but don't actually perform it")
 
+	defragCmd.Flags().BoolVar(&globalCfg.skipHealthcheckClusterEndpoints, "skip-healthcheck-cluster-endpoints", viper.GetBool("skip-healthcheck-cluster-endpoints"), "skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints")
+
 	return defragCmd
 }
 
@@ -98,6 +100,7 @@ func setDefaults() {
 	viper.SetDefault("defrag-rule", "")
 	viper.SetDefault("version", false)
 	viper.SetDefault("dry-run", false)
+	viper.SetDefault("skip-healthcheck-cluster-endpoints", false)
 }
 
 func main() {
@@ -269,10 +272,28 @@ func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
 		log.Println("No defragmentation rule provided")
 	}
 
+	if gcfg.skipHealthcheckClusterEndpoints && len(gcfg.endpoints) == 0 {
+		return errors.New("--skip-healthcheck-cluster-endpoints requires explicit endpoints to be provided via --endpoints flag")
+	}
+
+	if gcfg.skipHealthcheckClusterEndpoints && gcfg.useClusterEndpoints {
+		return errors.New("--skip-healthcheck-cluster-endpoints and --cluster flags are mutually exclusive")
+	}
+
+	if gcfg.skipHealthcheckClusterEndpoints && gcfg.dnsDomain != "" {
+		return errors.New("--skip-healthcheck-cluster-endpoints and --discovery-srv flags are mutually exclusive")
+	}
+
 	return nil
 }
 
 func healthCheck(gcfg globalConfig) bool {
+	if gcfg.skipHealthcheckClusterEndpoints {
+		log.Printf("Health check will be performed only on the explicitly provided endpoints: %v\n", gcfg.endpoints)
+	} else {
+		log.Println("Health check will be performed on all cluster member endpoints")
+	}
+
 	healthInfos, err := clusterHealth(gcfg)
 	if err != nil {
 		log.Printf("Failed to get members' health info: %v\n", err)
