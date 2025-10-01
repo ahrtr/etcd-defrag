@@ -52,7 +52,17 @@ func (eh epHealth) String() string {
 }
 
 func clusterHealth(gcfg globalConfig) ([]epHealth, error) {
-	eps, err := endpointsFromCluster(gcfg)
+	var (
+		eps []string
+		err error
+	)
+
+	if gcfg.skipHealthcheckClusterEndpoints {
+		eps, err = endpoints(gcfg)
+	} else {
+		eps, err = endpointsFromCluster(gcfg)
+	}
+
 	if err != nil {
 		return nil, err
 	}

@@ -40,6 +40,7 @@ It adds the following extra flags,
 | `--dry-run`                  | evaluate whether or not endpoints require defragmentation, but don't actually perform it, defaults to `false`. |
 | `--exclude-localhost`        | whether to exclude localhost endpoints, defaults to `false`. |
 | `--move-leader`              | whether to move the leadership before performing defragmentation on the leader, defaults to `false`. |
+| `--skip-healthcheck-cluster-endpoints` | skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints, defaults to `false`. |
 
 See the complete flags below,
 ```
@@ -50,31 +51,32 @@ Usage:
   etcd-defrag [flags]
 
 Flags:
-      --cacert string                  verify certificates of TLS-enabled secure servers using this CA bundle
-      --cert string                    identify secure client using this TLS certificate file
-      --cluster                        use all endpoints from the cluster member list
-      --command-timeout duration       command timeout (excluding dial timeout) (default 30s)
-      --compaction                     whether execute compaction before the defragmentation (defaults to true) (default true)
-      --continue-on-error              whether continue to defragment next endpoint if current one fails (default true)
-      --defrag-rule string             defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)
-      --dial-timeout duration          dial timeout for client connections (default 2s)
-  -d, --discovery-srv string           domain name to query for SRV records describing cluster endpoints
-      --discovery-srv-name string      service name to query when using DNS discovery
-      --dry-run                        evaluate whether or not endpoints require defragmentation, but don't actually perform it
-      --endpoints strings              comma separated etcd endpoints (default [127.0.0.1:2379])
-      --etcd-storage-quota-bytes int   etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes) (default 2147483648)
-      --exclude-localhost              whether to exclude localhost endpoints
-  -h, --help                           help for etcd-defrag
-      --insecure-discovery             accept insecure SRV records describing cluster endpoints (default true)
-      --insecure-skip-tls-verify       skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)
-      --insecure-transport             disable transport security for client connections (default true)
-      --keepalive-time duration        keepalive time for client connections (default 2s)
-      --keepalive-timeout duration     keepalive timeout for client connections (default 6s)
-      --key string                     identify secure client using this TLS key file
-      --move-leader                    whether to move the leadership before performing defragmentation on the leader
-      --password string                password for authentication (if this option is used, --user option shouldn't include password)
-      --user string                    username[:password] for authentication (prompt if password is not supplied)
-      --version                        print the version and exit
+      --cacert string                        verify certificates of TLS-enabled secure servers using this CA bundle
+      --cert string                          identify secure client using this TLS certificate file
+      --cluster                              use all endpoints from the cluster member list
+      --command-timeout duration             command timeout (excluding dial timeout) (default 30s)
+      --compaction                           whether execute compaction before the defragmentation (defaults to true) (default true)
+      --continue-on-error                    whether continue to defragment next endpoint if current one fails (default true)
+      --defrag-rule string                   defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)
+      --dial-timeout duration                dial timeout for client connections (default 2s)
+  -d, --discovery-srv string                 domain name to query for SRV records describing cluster endpoints
+      --discovery-srv-name string            service name to query when using DNS discovery
+      --dry-run                              evaluate whether or not endpoints require defragmentation, but don't actually perform it
+      --endpoints strings                    comma separated etcd endpoints (default [127.0.0.1:2379])
+      --etcd-storage-quota-bytes int         etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes) (default 2147483648)
+      --exclude-localhost                    whether to exclude localhost endpoints
+  -h, --help                                 help for etcd-defrag
+      --insecure-discovery                   accept insecure SRV records describing cluster endpoints (default true)
+      --insecure-skip-tls-verify             skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)
+      --insecure-transport                   disable transport security for client connections (default true)
+      --keepalive-time duration              keepalive time for client connections (default 2s)
+      --keepalive-timeout duration           keepalive timeout for client connections (default 6s)
+      --key string                           identify secure client using this TLS key file
+      --move-leader                          whether to move the leadership before performing defragmentation on the leader
+      --password string                      password for authentication (if this option is used, --user option shouldn't include password)
+      --skip-healthcheck-cluster-endpoints   skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints
+      --user string                          username[:password] for authentication (prompt if password is not supplied)
+      --version                              print the version and exit
 ```
 
 Environment variables can be used to set the flags, by setting the flag name in uppercase and prefixing it with `ETCD_DEFRAG_`. Please note that all hyphens should be replaced with underscores. For example, the flag `--move-leader` can be set with the environment variable `ETCD_DEFRAG_MOVE_LEADER`

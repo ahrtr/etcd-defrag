@@ -42,6 +42,8 @@ type globalConfig struct {
 	printVersion bool
 
 	dryRun bool
+
+	skipHealthcheckClusterEndpoints bool
 }
 
 func clientConfigWithoutEndpoints(gcfg globalConfig) *clientv3.ConfigSpec {
