@@ -34,10 +34,7 @@ func endpointsWithLeaderAtEnd(gcfg globalConfig, statusList []epStatus) ([]strin
 
 func endpoints(gcfg globalConfig) ([]string, error) {
 	if !gcfg.useClusterEndpoints {
-		if len(gcfg.endpoints) == 0 {
-			return nil, errors.New("no endpoints provided")
-		}
-		return gcfg.endpoints, nil
+		return endpointsFromCmd(gcfg)
 	}
 
 	return endpointsFromCluster(gcfg)
