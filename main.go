@@ -214,7 +214,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 					continue
 				}
 				if globalCfg.waitPeriod > 0 {
-					log.Printf("Transferred the leadership success! Waiting for %s for next operation \n", globalCfg.waitPeriod.String())
+					log.Printf("Transferred the leadership successfully! Waiting for %s for next operation\n", globalCfg.waitPeriod.String())
 					time.Sleep(globalCfg.waitPeriod)
 				}
 			}
@@ -247,7 +247,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		}
 
 		if globalCfg.waitPeriod > 0 && index < len(eps)-1 {
-			log.Printf("Waiting for %s for next operation \n", globalCfg.waitPeriod.String())
+			log.Printf("Waiting for %s for next operation\n", globalCfg.waitPeriod.String())
 			time.Sleep(globalCfg.waitPeriod)
 		}
 	}
