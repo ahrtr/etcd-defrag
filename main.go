@@ -39,6 +39,7 @@ func newDefragCommand() *cobra.Command {
 	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", viper.GetBool("cluster"), "use all endpoints from the cluster member list")
 	defragCmd.Flags().BoolVar(&globalCfg.excludeLocalhost, "exclude-localhost", viper.GetBool("exclude-localhost"), "whether to exclude localhost endpoints")
 	defragCmd.Flags().BoolVar(&globalCfg.moveLeader, "move-leader", viper.GetBool("move-leader"), "whether to move the leadership before performing defragmentation on the leader")
+	defragCmd.Flags().DurationVar(&globalCfg.waitPeriod, "wait-between-defrags", viper.GetDuration("wait-period"), "wait time between consecutive defragmentation runs or after a leader movement (if --move-leader is enabled). Defaults to 0s (no wait)")
 
 	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", viper.GetDuration("dial-timeout"), "dial timeout for client connections")
 	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", viper.GetDuration("command-timeout"), "command timeout (excluding dial timeout)")
@@ -80,6 +81,7 @@ func setDefaults() {
 	viper.SetDefault("cluster", false)
 	viper.SetDefault("exclude-localhost", false)
 	viper.SetDefault("move-leader", false)
+	viper.SetDefault("wait-period", 0*time.Second)
 	viper.SetDefault("dial-timeout", 2*time.Second)
 	viper.SetDefault("command-timeout", 30*time.Second)
 	viper.SetDefault("keepalive-time", 2*time.Second)
@@ -169,7 +171,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 
 	log.Printf("%d endpoint(s) need to be defragmented: %v\n", len(eps), eps)
 	failures := 0
-	for _, ep := range eps {
+	for index, ep := range eps {
 		log.Print("[Before defragmentation] ")
 		status, err := getMemberStatus(globalCfg, ep)
 		if err != nil {
@@ -211,6 +213,10 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 					}
 					continue
 				}
+				if globalCfg.waitPeriod > 0 {
+					log.Printf("Transferred the leadership success! Waiting for %s for next operation \n", globalCfg.waitPeriod.String())
+					time.Sleep(globalCfg.waitPeriod)
+				}
 			}
 		}
 
@@ -238,6 +244,11 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 				break
 			}
 			continue
+		}
+
+		if globalCfg.waitPeriod > 0 && index < len(eps)-1 {
+			log.Printf("Waiting for %s for next operation \n", globalCfg.waitPeriod.String())
+			time.Sleep(globalCfg.waitPeriod)
 		}
 	}
 	if failures != 0 {
