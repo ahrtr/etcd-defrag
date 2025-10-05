@@ -40,6 +40,7 @@ It adds the following extra flags,
 | `--dry-run`                  | evaluate whether or not endpoints require defragmentation, but don't actually perform it, defaults to `false`. |
 | `--exclude-localhost`        | whether to exclude localhost endpoints, defaults to `false`. |
 | `--move-leader`              | whether to move the leadership before performing defragmentation on the leader, defaults to `false`. |
+| `--wait-between-defrags`     | wait time between consecutive defragmentation runs or after a leader movement (if --move-leader is enabled). Defaults to 0s (no wait) |
 | `--skip-healthcheck-cluster-endpoints` | skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints, defaults to `false`. |
 
 See the complete flags below,
@@ -75,6 +76,7 @@ Flags:
       --move-leader                          whether to move the leadership before performing defragmentation on the leader
       --password string                      password for authentication (if this option is used, --user option shouldn't include password)
       --skip-healthcheck-cluster-endpoints   skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints
+      --wait-between-defrags                 wait time between consecutive defragmentation runs or after a leader movement (if --move-leader is enabled). Defaults to 0s (no wait)
       --user string                          username[:password] for authentication (prompt if password is not supplied)
       --version                              print the version and exit
 ```
