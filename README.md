@@ -11,6 +11,7 @@ etcd-defrag
   - [Example 1: run defragmentation on one endpoint](#example-1-run-defragmentation-on-one-endpoint)
   - [Example 2: run defragmentation on multiple endpoints](#example-2-run-defragmentation-on-multiple-endpoints)
   - [Example 3: run defragmentation on all members in the cluster](#example-3-run-defragmentation-on-all-members-in-the-cluster)
+- [Auto-disalarm Feature](#auto-disalarm-feature)
 - [Defragmentation rule](#defragmentation-rule)
 - [Container image](#container-image)
 - [Contributing](#contributing)
@@ -42,6 +43,8 @@ It adds the following extra flags,
 | `--move-leader`              | whether to move the leadership before performing defragmentation on the leader, defaults to `false`. |
 | `--wait-between-defrags`     | wait time between consecutive defragmentation runs or after a leader movement (if --move-leader is enabled). Defaults to 0s (no wait) |
 | `--skip-healthcheck-cluster-endpoints` | skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints, defaults to `false`. |
+| `--auto-disalarm`            | automatically disalarm NOSPACE alarms after successful defragmentation, defaults to `false`. |
+| `--disalarm-threshold`       | threshold ratio for auto-disalarm (db size / quota), only disalarm when all members are below this threshold, defaults to `0.8`. |
 
 See the complete flags below,
 ```
@@ -78,6 +81,8 @@ Flags:
       --skip-healthcheck-cluster-endpoints   skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints
       --wait-between-defrags                 wait time between consecutive defragmentation runs or after a leader movement (if --move-leader is enabled). Defaults to 0s (no wait)
       --user string                          username[:password] for authentication (prompt if password is not supplied)
+      --auto-disalarm                        whether automatically disalarm NOSPACE alarms after successful defragmentation（default false）
+      --disalarm-threshold float             Threshold ratio for automatic alarm clearing (db size / quota). Valid range: 0 < x < 1 (default: 0.9)
       --version                              print the version and exit
 ```
 
@@ -174,6 +179,47 @@ $ etcdctl endpoint status -w table --cluster
 | https://127.0.0.1:32379 | fd422379fda50e48 |   3.5.8 |   25 kB |     false |      false |        10 |        164 |                164 |        |
 +-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
 ```
+## Auto-disalarm Feature
+
+The auto-disalarm feature automatically removes NOSPACE alarms after successful defragmentation when certain conditions are met. This helps maintain cluster health by clearing alarms that are no longer relevant after freeing up space through defragmentation.
+
+### How it works
+
+When `--auto-disalarm` is enabled, etcd-defrag will:
+
+1. Check if there are any NOSPACE alarms in the cluster after defragmentation
+2. Verify that all cluster members' database size is below the specified threshold
+3. Automatically disalarm NOSPACE alarms if both conditions are met
+
+### Configuration
+
+- `--auto-disalarm`: whether automatically disalarm NOSPACE alarms after successful defragmentation（default false）
+- `--disalarm-threshold`: Threshold ratio for automatic alarm clearing (db size / quota). Valid range: 0 < x < 1 (default: 0.9)
+
+### Example Usage
+
+```bash
+# Enable auto-disalarm with default threshold (0.9)
+$ ./etcd-defrag --endpoints=https://127.0.0.1:2379 --cluster --auto-disalarm
+
+# Enable auto-disalarm with custom threshold (0.7)
+$ ./etcd-defrag --endpoints=https://127.0.0.1:2379 --cluster --auto-disalarm --disalarm-threshold=0.7
+```
+
+### Safety Considerations
+
+- Auto-disalarm only triggers when **all** cluster members are below the threshold.
+
+- The threshold is highly dependent on the **--etcd-storage-quota-bytes** flag, which defaults to `2147483648` (2 GiB) in `etcd-defrag`. The formula is as follows:
+  ```
+  threshold = etcd-storage-quota-bytes * disalarm-threshold
+  ```
+  Please ensure that you provide the correct value; otherwise, unexpected behavior may occur, such as the disalarm operation not being triggered.
+
+- This feature only affects **NOSPACE** alarms; other alarm types are not affected.
+
+- The value of --disalarm-threshold must be between **0 and 1.0** (0 < x < 1).
+
 ## Defragmentation rule
 Defragmentation is an expensive operation, so it should be executed as infrequent as possible. On the other hand,
 it's also necessary to make sure any etcd member will not run out of the storage quota. It's exactly the reason
