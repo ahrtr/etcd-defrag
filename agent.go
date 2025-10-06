@@ -256,3 +256,80 @@ func transferLeadership(gcfg globalConfig, leaderEp string, transfereeID uint64)
 
 	return nil
 }
+
+// noSpaceAlarms gets all NOSPACE alarms from the cluster
+func noSpaceAlarms(gcfg globalConfig) ([]*etcdserverpb.AlarmMember, error) {
+	eps, err := endpoints(gcfg)
+	if err != nil {
+		return nil, err
+	}
+
+	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec.Endpoints = eps
+	c, err := createClient(cfgSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	defer func() {
+		c.Close()
+		cancel()
+	}()
+
+	l, err := c.AlarmList(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter out NOSPACE alarms
+	var nospaceAlarms []*etcdserverpb.AlarmMember
+	for _, alarm := range l.Alarms {
+		if alarm.Alarm == etcdserverpb.AlarmType_NOSPACE {
+			nospaceAlarms = append(nospaceAlarms, alarm)
+		}
+	}
+	return nospaceAlarms, nil
+}
+
+// disAlarmNoSpaceAlarms disalarms the provided NOSPACE alarms
+func disAlarmNoSpaceAlarms(gcfg globalConfig, nospaceAlarms []*etcdserverpb.AlarmMember) error {
+	if len(nospaceAlarms) == 0 {
+		return nil // No NOSPACE alarms to disalarm
+	}
+
+	eps, err := endpoints(gcfg)
+	if err != nil {
+		return err
+	}
+
+	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec.Endpoints = eps
+	c, err := createClient(cfgSpec)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	defer func() {
+		c.Close()
+		cancel()
+	}()
+
+	failMembers := make([]uint64, 0, len(nospaceAlarms))
+	for _, alarm := range nospaceAlarms {
+		_, err = c.AlarmDisarm(ctx, &clientv3.AlarmMember{
+			MemberID: alarm.MemberID,
+			Alarm:    etcdserverpb.AlarmType_NOSPACE,
+		})
+		if err != nil {
+			failMembers = append(failMembers, alarm.MemberID)
+			continue
+		}
+	}
+
+	if len(failMembers) > 0 {
+		return fmt.Errorf("failed to disalarm NOSPACE alarms for members %v", failMembers)
+	}
+	return nil
+}

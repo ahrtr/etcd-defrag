@@ -45,6 +45,9 @@ type globalConfig struct {
 	dryRun bool
 
 	skipHealthcheckClusterEndpoints bool
+
+	autoDisalarm      bool
+	disalarmThreshold float64
 }
 
 func clientConfigWithoutEndpoints(gcfg globalConfig) *clientv3.ConfigSpec {
