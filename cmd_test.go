@@ -46,6 +46,8 @@ func TestAllFlags(t *testing.T) {
 				defragRule:          "",
 				printVersion:        false,
 				dryRun:              false,
+				autoDisalarm:        false,
+				disalarmThreshold:   0.9,
 			},
 		},
 		{
@@ -75,6 +77,8 @@ func TestAllFlags(t *testing.T) {
 				"ETCD_DEFRAG_DEFRAG_RULE":              "size(db) > 500MB",
 				"ETCD_DEFRAG_VERSION":                  "true",
 				"ETCD_DEFRAG_DRY_RUN":                  "true",
+				"ETCD_DEFRAG_AUTO_DISALARM":            "false",
+				"ETCD_DEFRAG_DISALARM_THRESHOLD":       "0.9",
 			},
 			cli: nil,
 			want: globalConfig{
@@ -102,6 +106,8 @@ func TestAllFlags(t *testing.T) {
 				defragRule:          "size(db) > 500MB",
 				printVersion:        true,
 				dryRun:              true,
+				autoDisalarm:        false,
+				disalarmThreshold:   0.9,
 			},
 		},
 		{
@@ -163,6 +169,8 @@ func TestAllFlags(t *testing.T) {
 				defragRule:          "size(db) >= 1GB",
 				printVersion:        true,
 				dryRun:              true,
+				autoDisalarm:        false,
+				disalarmThreshold:   0.9,
 			},
 		},
 		{
@@ -204,6 +212,8 @@ func TestAllFlags(t *testing.T) {
 				defragRule:          "",
 				printVersion:        false, // default
 				dryRun:              false, // default
+				autoDisalarm:        false, // default
+				disalarmThreshold:   0.9,
 			},
 		},
 	}

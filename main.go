@@ -73,6 +73,9 @@ func newDefragCommand() *cobra.Command {
 
 	defragCmd.Flags().BoolVar(&globalCfg.skipHealthcheckClusterEndpoints, "skip-healthcheck-cluster-endpoints", viper.GetBool("skip-healthcheck-cluster-endpoints"), "skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints")
 
+	defragCmd.Flags().BoolVar(&globalCfg.autoDisalarm, "auto-disalarm", viper.GetBool("auto-disalarm"), "whether automatically disalarm NOSPACE alarms after successful defragmentation，defaults to false")
+	defragCmd.Flags().Float64Var(&globalCfg.disalarmThreshold, "disalarm-threshold", viper.GetFloat64("disalarm-threshold"), "Threshold ratio for automatic alarm clearing (db size / quota). Valid range: 0 < x < 1 (default: 0.9)")
+
 	return defragCmd
 }
 
@@ -103,6 +106,8 @@ func setDefaults() {
 	viper.SetDefault("version", false)
 	viper.SetDefault("dry-run", false)
 	viper.SetDefault("skip-healthcheck-cluster-endpoints", false)
+	viper.SetDefault("auto-disalarm", false)
+	viper.SetDefault("disalarm-threshold", 0.9)
 }
 
 func main() {
@@ -256,6 +261,20 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	log.Println("The defragmentation is successful.")
+
+	// Perform auto-disalarm if enabled and not in dry-run mode
+	if !globalCfg.dryRun && globalCfg.autoDisalarm {
+		log.Println("Start auto-disalarm")
+		// Get updated status after defragmentation
+		updatedStatusList, err := getMembersStatus(globalCfg)
+		if err != nil {
+			log.Printf("Failed to get updated members status for auto-disalarm: %v\n", err)
+		} else {
+			if err := performAutoDisalarm(globalCfg, updatedStatusList); err != nil {
+				log.Printf("Auto-disalarm failed: %v\n", err)
+			}
+		}
+	}
 }
 
 func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
@@ -293,6 +312,14 @@ func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
 
 	if gcfg.skipHealthcheckClusterEndpoints && gcfg.dnsDomain != "" {
 		return errors.New("--skip-healthcheck-cluster-endpoints and --discovery-srv flags are mutually exclusive")
+	}
+
+	if gcfg.autoDisalarm && (gcfg.disalarmThreshold <= 0 || gcfg.disalarmThreshold >= 1) {
+		return errors.New("--disalarm-threshold must be greater than 0 and less than 1.0 when --auto-disalarm is enabled")
+	}
+
+	if gcfg.disalarmThreshold != 0 && !gcfg.autoDisalarm {
+		log.Println("Warning: --disalarm-threshold is set but --auto-disalarm is disabled, threshold will be ignored")
 	}
 
 	return nil
