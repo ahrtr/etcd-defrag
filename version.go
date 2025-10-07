@@ -1,7 +1,7 @@
 package main
 
 var (
-	Version = "0.32.0"
+	Version = "0.33.0"
 	// GitSHA is the commit SHA value set during build
 	GitSHA = "Not provided (use ./build.sh)"
 )
