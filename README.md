@@ -11,9 +11,10 @@ etcd-defrag
   - [Example 1: run defragmentation on one endpoint](#example-1-run-defragmentation-on-one-endpoint)
   - [Example 2: run defragmentation on multiple endpoints](#example-2-run-defragmentation-on-multiple-endpoints)
   - [Example 3: run defragmentation on all members in the cluster](#example-3-run-defragmentation-on-all-members-in-the-cluster)
-- [Defragmentation rule](#defragmentation-rule)
+- [Defragmentation Rule](#defragmentation-rule)
 - [Auto-disalarm Feature](#auto-disalarm-feature)
-- [Container image](#container-image)
+- [Container Image](#container-image)
+- [Compatibility Matrix](#compatibility-matrix)
 - [Contributing](#contributing)
 - [Note](#note)
 
@@ -180,7 +181,7 @@ $ etcdctl endpoint status -w table --cluster
 +-------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
 ```
 
-## Defragmentation rule
+## Defragmentation Rule
 Defragmentation is an expensive operation, so it should be executed as infrequent as possible. On the other hand,
 it's also necessary to make sure any etcd member will not run out of the storage quota. It's exactly the reason
 why the defragmentation rule is introduced, it can skip unnecessary expensive defragmentation, and also keep
@@ -285,7 +286,7 @@ $ ./etcd-defrag --endpoints=https://127.0.0.1:2379 --cluster --auto-disalarm --d
 
 - The value of --disalarm-threshold must be between **0 and 1.0** (0 < x < 1).
 
-## Container image
+## Container Image
 Container images are released automatically using GitHub actions and [`ko-build/ko`](https://github.com/ko-build/ko).
 They can be used as follows:
 
@@ -303,6 +304,13 @@ If you need an image for another `GOARCH` (e.g. `ppc64le` or `s390x`) other than
 ```bash
 $ DOCKER_BUILDKIT=1 docker build --build-arg ARCH=${ARCH} -t "etcd-defrag:${VERSION}" -f Dockerfile .
 ```
+
+## Compatibility Matrix
+
+etcd-defrag supports all etcd versions that are currently under official support by the etcd community, including:
+- etcd v3.4.x (end of support in May 2026)
+- etcd v3.5.x
+- etcd v3.6.x
 
 ## Contributing
 Any contribution is welcome!
