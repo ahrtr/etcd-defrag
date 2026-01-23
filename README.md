@@ -190,7 +190,7 @@ Users can configure a defragmentation rule using the flag `--defrag-rule`. The r
 which means its evaluation result should be a boolean value. **It supports arithmetic (e.g. `+` `-` `*` `/` `%`) and logic
 (e.g. `==` `!=` `<` `>` `<=` `>=` `&&` `||` `!`) operators supported by golang. Parenthesis `()` can be used to control precedence**.
 
-Currently, `etcd-defrag` supports three variables below,
+Currently, `etcd-defrag` supports five variables below,
 | Variable name   | Description |
 |---------------  |-------------|
 | `dbSize`        | total size of the etcd database |
