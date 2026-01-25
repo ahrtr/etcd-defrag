@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 func TestAllFlags(t *testing.T) {
@@ -15,39 +17,39 @@ func TestAllFlags(t *testing.T) {
 		name string
 		env  map[string]string
 		cli  []string
-		want globalConfig
+		want config.GlobalConfig
 	}{
 		{
 			name: "defaults only",
 			env:  nil,
 			cli:  nil,
-			want: globalConfig{
-				endpoints:           []string{"127.0.0.1:2379"},
-				useClusterEndpoints: false,
-				excludeLocalhost:    false,
-				moveLeader:          false,
-				dialTimeout:         2 * time.Second,
-				commandTimeout:      30 * time.Second,
-				keepAliveTime:       2 * time.Second,
-				keepAliveTimeout:    6 * time.Second,
-				insecure:            true,
-				insecureSkepVerify:  false,
-				certFile:            "",
-				keyFile:             "",
-				caFile:              "",
-				username:            "",
-				password:            "",
-				dnsDomain:           "",
-				dnsService:          "",
-				insecureDiscovery:   true,
-				compaction:          true,
-				continueOnError:     true,
-				dbQuotaBytes:        2 * 1024 * 1024 * 1024,
-				defragRule:          "",
-				printVersion:        false,
-				dryRun:              false,
-				autoDisalarm:        false,
-				disalarmThreshold:   0.9,
+			want: config.GlobalConfig{
+				Endpoints:             []string{"127.0.0.1:2379"},
+				Cluster:               false,
+				ExcludeLocalhost:      false,
+				MoveLeader:            false,
+				DialTimeout:           2 * time.Second,
+				CommandTimeout:        30 * time.Second,
+				KeepaliveTime:         2 * time.Second,
+				KeepaliveTimeout:      6 * time.Second,
+				InsecureTransport:     true,
+				InsecureSkipVerify:    false,
+				Cert:                  "",
+				Key:                   "",
+				CaCert:                "",
+				User:                  "",
+				Password:              "",
+				DiscoverySrv:          "",
+				DiscoverySrvName:      "",
+				InsecureDiscovery:     true,
+				Compaction:            true,
+				ContinueOnError:       true,
+				EtcdStorageQuotaBytes: 2 * 1024 * 1024 * 1024,
+				DefragRule:            "",
+				PrintVersion:          false,
+				DryRun:                false,
+				AutoDisalarm:          false,
+				DisalarmThreshold:     0.9,
 			},
 		},
 		{
@@ -81,33 +83,33 @@ func TestAllFlags(t *testing.T) {
 				"ETCD_DEFRAG_DISALARM_THRESHOLD":       "0.9",
 			},
 			cli: nil,
-			want: globalConfig{
-				endpoints:           []string{"10.0.0.1:2379", "10.0.0.2:2379"},
-				useClusterEndpoints: true,
-				excludeLocalhost:    true,
-				moveLeader:          true,
-				dialTimeout:         5 * time.Second,
-				commandTimeout:      45 * time.Second,
-				keepAliveTime:       3 * time.Second,
-				keepAliveTimeout:    8 * time.Second,
-				insecure:            false,
-				insecureSkepVerify:  true,
-				certFile:            "/path/to/cert",
-				keyFile:             "/path/to/key",
-				caFile:              "/path/to/ca",
-				username:            "envuser",
-				password:            "envpassword",
-				dnsDomain:           "mydomain.com",
-				dnsService:          "etcd",
-				insecureDiscovery:   false,
-				compaction:          false,
-				continueOnError:     false,
-				dbQuotaBytes:        1073741824,
-				defragRule:          "size(db) > 500MB",
-				printVersion:        true,
-				dryRun:              true,
-				autoDisalarm:        false,
-				disalarmThreshold:   0.9,
+			want: config.GlobalConfig{
+				Endpoints:             []string{"10.0.0.1:2379", "10.0.0.2:2379"},
+				Cluster:               true,
+				ExcludeLocalhost:      true,
+				MoveLeader:            true,
+				DialTimeout:           5 * time.Second,
+				CommandTimeout:        45 * time.Second,
+				KeepaliveTime:         3 * time.Second,
+				KeepaliveTimeout:      8 * time.Second,
+				InsecureTransport:     false,
+				InsecureSkipVerify:    true,
+				Cert:                  "/path/to/cert",
+				Key:                   "/path/to/key",
+				CaCert:                "/path/to/ca",
+				User:                  "envuser",
+				Password:              "envpassword",
+				DiscoverySrv:          "mydomain.com",
+				DiscoverySrvName:      "etcd",
+				InsecureDiscovery:     false,
+				Compaction:            false,
+				ContinueOnError:       false,
+				EtcdStorageQuotaBytes: 1073741824,
+				DefragRule:            "size(db) > 500MB",
+				PrintVersion:          true,
+				DryRun:                true,
+				AutoDisalarm:          false,
+				DisalarmThreshold:     0.9,
 			},
 		},
 		{
@@ -144,33 +146,33 @@ func TestAllFlags(t *testing.T) {
 				"--version=true",
 				"--dry-run=true",
 			},
-			want: globalConfig{
-				endpoints:           []string{"192.168.1.100:2379", "192.168.1.101:2379"},
-				useClusterEndpoints: true,
-				excludeLocalhost:    true,
-				moveLeader:          true,
-				dialTimeout:         7 * time.Second,
-				commandTimeout:      50 * time.Second,
-				keepAliveTime:       4 * time.Second,
-				keepAliveTimeout:    10 * time.Second,
-				insecure:            false,
-				insecureSkepVerify:  true,
-				certFile:            "/cli/cert",
-				keyFile:             "/cli/key",
-				caFile:              "/cli/ca",
-				username:            "cliuser",
-				password:            "clipass",
-				dnsDomain:           "cli.mydomain",
-				dnsService:          "clietcd",
-				insecureDiscovery:   false,
-				compaction:          false,
-				continueOnError:     false,
-				dbQuotaBytes:        999999999,
-				defragRule:          "size(db) >= 1GB",
-				printVersion:        true,
-				dryRun:              true,
-				autoDisalarm:        false,
-				disalarmThreshold:   0.9,
+			want: config.GlobalConfig{
+				Endpoints:             []string{"192.168.1.100:2379", "192.168.1.101:2379"},
+				Cluster:               true,
+				ExcludeLocalhost:      true,
+				MoveLeader:            true,
+				DialTimeout:           7 * time.Second,
+				CommandTimeout:        50 * time.Second,
+				KeepaliveTime:         4 * time.Second,
+				KeepaliveTimeout:      10 * time.Second,
+				InsecureTransport:     false,
+				InsecureSkipVerify:    true,
+				Cert:                  "/cli/cert",
+				Key:                   "/cli/key",
+				CaCert:                "/cli/ca",
+				User:                  "cliuser",
+				Password:              "clipass",
+				DiscoverySrv:          "cli.mydomain",
+				DiscoverySrvName:      "clietcd",
+				InsecureDiscovery:     false,
+				Compaction:            false,
+				ContinueOnError:       false,
+				EtcdStorageQuotaBytes: 999999999,
+				DefragRule:            "size(db) >= 1GB",
+				PrintVersion:          true,
+				DryRun:                true,
+				AutoDisalarm:          false,
+				DisalarmThreshold:     0.9,
 			},
 		},
 		{
@@ -187,33 +189,33 @@ func TestAllFlags(t *testing.T) {
 				"--dial-timeout=10s",       // override the default
 				"--compaction=true",        // override the env
 			},
-			want: globalConfig{
-				endpoints:           []string{"env:2379"},
-				useClusterEndpoints: false, // env sets cluster=false
-				excludeLocalhost:    true,  // from CLI
-				moveLeader:          true,  // from env
-				dialTimeout:         10 * time.Second,
-				commandTimeout:      30 * time.Second, // default
-				keepAliveTime:       2 * time.Second,  // default
-				keepAliveTimeout:    6 * time.Second,  // default
-				insecure:            true,             // default
-				insecureSkepVerify:  false,            // default
-				certFile:            "",
-				keyFile:             "",
-				caFile:              "",
-				username:            "",
-				password:            "",
-				dnsDomain:           "",
-				dnsService:          "",
-				insecureDiscovery:   true,
-				compaction:          true,      // CLI override
-				continueOnError:     true,      // default
-				dbQuotaBytes:        555555555, // from env
-				defragRule:          "",
-				printVersion:        false, // default
-				dryRun:              false, // default
-				autoDisalarm:        false, // default
-				disalarmThreshold:   0.9,
+			want: config.GlobalConfig{
+				Endpoints:             []string{"env:2379"},
+				Cluster:               false, // env sets cluster=false
+				ExcludeLocalhost:      true,  // from CLI
+				MoveLeader:            true,  // from env
+				DialTimeout:           10 * time.Second,
+				CommandTimeout:        30 * time.Second, // default
+				KeepaliveTime:         2 * time.Second,  // default
+				KeepaliveTimeout:      6 * time.Second,  // default
+				InsecureTransport:     true,             // default
+				InsecureSkipVerify:    false,            // default
+				Cert:                  "",
+				Key:                   "",
+				CaCert:                "",
+				User:                  "",
+				Password:              "",
+				DiscoverySrv:          "",
+				DiscoverySrvName:      "",
+				InsecureDiscovery:     true,
+				Compaction:            true,      // CLI override
+				ContinueOnError:       true,      // default
+				EtcdStorageQuotaBytes: 555555555, // from env
+				DefragRule:            "",
+				PrintVersion:          false, // default
+				DryRun:                false, // default
+				AutoDisalarm:          false, // default
+				DisalarmThreshold:     0.9,
 			},
 		},
 	}
@@ -222,6 +224,8 @@ func TestAllFlags(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			viper.Reset()
 			os.Clearenv()
+			// Reset globalCfg to defaults before each test
+			globalCfg = config.GlobalConfig{}
 
 			for key, val := range tc.env {
 				if err := os.Setenv(key, val); err != nil {

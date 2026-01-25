@@ -7,51 +7,53 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cfg       globalConfig
+		cfg       config.GlobalConfig
 		expectErr bool
 	}{
 		{
 			name: "flag disabled with no endpoints",
-			cfg: globalConfig{
-				skipHealthcheckClusterEndpoints: false,
-				endpoints:                       []string{},
+			cfg: config.GlobalConfig{
+				SkipHealthcheckClusterEndpoints: false,
+				Endpoints:                       []string{},
 			},
 			expectErr: false,
 		},
 		{
 			name: "flag disabled with endpoints",
-			cfg: globalConfig{
-				skipHealthcheckClusterEndpoints: false,
-				endpoints:                       []string{"127.0.0.1:2379"},
+			cfg: config.GlobalConfig{
+				SkipHealthcheckClusterEndpoints: false,
+				Endpoints:                       []string{"127.0.0.1:2379"},
 			},
 			expectErr: false,
 		},
 		{
 			name: "flag enabled with no endpoints",
-			cfg: globalConfig{
-				skipHealthcheckClusterEndpoints: true,
-				endpoints:                       []string{},
+			cfg: config.GlobalConfig{
+				SkipHealthcheckClusterEndpoints: true,
+				Endpoints:                       []string{},
 			},
 			expectErr: true,
 		},
 		{
 			name: "flag enabled with single endpoint",
-			cfg: globalConfig{
-				skipHealthcheckClusterEndpoints: true,
-				endpoints:                       []string{"192.168.1.10:2379"},
+			cfg: config.GlobalConfig{
+				SkipHealthcheckClusterEndpoints: true,
+				Endpoints:                       []string{"192.168.1.10:2379"},
 			},
 			expectErr: false,
 		},
 		{
 			name: "flag enabled with multiple endpoints",
-			cfg: globalConfig{
-				skipHealthcheckClusterEndpoints: true,
-				endpoints:                       []string{"192.168.1.10:2379", "192.168.1.11:2379"},
+			cfg: config.GlobalConfig{
+				SkipHealthcheckClusterEndpoints: true,
+				Endpoints:                       []string{"192.168.1.10:2379", "192.168.1.11:2379"},
 			},
 			expectErr: false,
 		},
@@ -60,7 +62,7 @@ func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cmd := &cobra.Command{}
-			err := validateConfig(cmd, tc.cfg)
+			err := tc.cfg.Validate(cmd)
 
 			if tc.expectErr {
 				require.Error(t, err)
@@ -117,6 +119,8 @@ func TestAllFlags_SkipHealthcheckClusterEndpoints(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			viper.Reset()
 			os.Clearenv()
+			// Reset globalCfg to defaults before each test
+			globalCfg = config.GlobalConfig{}
 
 			for key, val := range tc.env {
 				if err := os.Setenv(key, val); err != nil {
@@ -134,7 +138,7 @@ func TestAllFlags_SkipHealthcheckClusterEndpoints(t *testing.T) {
 			err := cmd.Execute()
 			require.NoError(t, err)
 
-			require.Equal(t, tc.want, globalCfg.skipHealthcheckClusterEndpoints)
+			require.Equal(t, tc.want, globalCfg.SkipHealthcheckClusterEndpoints)
 		})
 	}
 }

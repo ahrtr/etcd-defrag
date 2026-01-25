@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-
 	"testing"
 
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/exp/slices"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 func TestEndpointDedup(t *testing.T) {
@@ -100,7 +101,7 @@ func TestEndpointDedup(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			fakeClient.memberListResp = testcase.returnedMemberList
-			ep, err := endpointsFromCluster(globalConfig{endpoints: []string{"https://localhost:2379"}})
+			ep, err := endpointsFromCluster(config.GlobalConfig{Endpoints: []string{"https://localhost:2379"}})
 			if err != nil {
 				t.Error(err)
 			}
@@ -164,7 +165,7 @@ func TestEndpointExcludeLocalhost(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			fakeClient.memberListResp = testcase.returnedMemberList
-			ep, err := endpointsFromCluster(globalConfig{endpoints: []string{"https://localhost:2379"}, excludeLocalhost: testcase.excludeLocalhost})
+			ep, err := endpointsFromCluster(config.GlobalConfig{Endpoints: []string{"https://localhost:2379"}, ExcludeLocalhost: testcase.excludeLocalhost})
 			if err != nil {
 				t.Error(err)
 			}
