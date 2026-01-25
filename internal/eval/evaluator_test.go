@@ -1,12 +1,10 @@
-package main
+package eval
 
 import (
 	"testing"
-
-	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
-func TestValidateRule(t *testing.T) {
+func TestNew(t *testing.T) {
 	testCases := []struct {
 		name        string
 		rule        string
@@ -57,11 +55,16 @@ func TestValidateRule(t *testing.T) {
 			rule:        "dbSizE > 100",
 			expectError: true,
 		},
+		{
+			name:        "empty rule is valid",
+			rule:        "",
+			expectError: false,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			err := validateRule(tc.rule)
+			_, err := New(tc.rule)
 			if tc.expectError != (err != nil) {
 				t.Errorf("Unexpected result, expected error: %t, got %v", tc.expectError, err)
 			}
@@ -74,21 +77,11 @@ func TestEvaluate(t *testing.T) {
 		name             string
 		rule             string
 		expectError      bool
-		dbQuota          int
-		dbSize           int
-		dbSizeInUse      int
+		dbQuota          int64
+		dbSize           int64
+		dbSizeInUse      int64
 		evaluationResult bool
 	}{
-		{
-			name:        "not a boolean expression",
-			rule:        "dbSize - dbSizeInUse",
-			expectError: true,
-		},
-		{
-			name:        "invalid variable",
-			rule:        "dbSizE > 100",
-			expectError: true,
-		},
 		{
 			name:             "dbSize is greater than dbQuota*80/100",
 			rule:             "dbSize > dbQuota*80/100",
@@ -195,21 +188,31 @@ func TestEvaluate(t *testing.T) {
 			dbSize:           81,
 			evaluationResult: false,
 		},
+		{
+			name:             "empty rule evaluates to true",
+			rule:             "",
+			dbQuota:          100,
+			dbSize:           50,
+			evaluationResult: true,
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			gcfg := globalConfig{
-				defragRule:   tc.rule,
-				dbQuotaBytes: tc.dbQuota,
+			evaluator, err := New(tc.rule)
+			if err != nil {
+				t.Fatalf("Failed to create evaluator: %v", err)
 			}
-			es := epStatus{
-				Resp: &clientv3.StatusResponse{
-					DbSize:      int64(tc.dbSize),
-					DbSizeInUse: int64(tc.dbSizeInUse),
-				},
+
+			vars := &Variables{
+				DbSize:       tc.dbSize,
+				DbSizeInUse:  tc.dbSizeInUse,
+				DbSizeFree:   tc.dbSize - tc.dbSizeInUse,
+				DbQuota:      tc.dbQuota,
+				DbQuotaUsage: float64(tc.dbSize) / float64(tc.dbQuota),
 			}
-			ret, err := evaluate(gcfg, es)
+
+			ret, err := evaluator.Evaluate(vars)
 			if tc.expectError != (err != nil) {
 				t.Fatalf("Unexpected result, expected error: %t, got %v", tc.expectError, err)
 			}
