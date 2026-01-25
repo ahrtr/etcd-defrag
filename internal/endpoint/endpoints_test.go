@@ -1,30 +1,21 @@
-package main
+package endpoint
 
 import (
-	"context"
-
 	"testing"
 
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/exp/slices"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
-func TestEndpointDedup(t *testing.T) {
-	oldCreateClient := createClient
-	t.Cleanup(func() {
-		createClient = oldCreateClient
-	})
-
-	fakeClient := fakeClientURLClient{}
-	createClient = func(cfgSpec *clientv3.ConfigSpec) (EtcdCluster, error) {
-		return &fakeClient, nil
-	}
-
+func TestExtractEndpoints(t *testing.T) {
 	testcases := []struct {
 		name               string
 		returnedMemberList *clientv3.MemberListResponse
 		expectedEndpoints  []string
+		excludeLocalhost   bool
 	}{
 		{
 			"normal",
@@ -42,6 +33,7 @@ func TestEndpointDedup(t *testing.T) {
 				},
 			},
 			[]string{"etcd1.example.com:2379", "etcd2.example.com:2379", "etcd3.example.com:2379"},
+			false,
 		},
 		{
 			"sort",
@@ -59,6 +51,7 @@ func TestEndpointDedup(t *testing.T) {
 				},
 			},
 			[]string{"etcd1.example.com:2379", "etcd2.example.com:2379", "etcd3.example.com:2379"},
+			false,
 		},
 		{
 			"uniq",
@@ -76,6 +69,7 @@ func TestEndpointDedup(t *testing.T) {
 				},
 			},
 			[]string{"etcd.example.com:2379", "etcd1.example.com:2379", "etcd2.example.com:2379", "etcd3.example.com:2379"},
+			false,
 		},
 		{
 			"ignore learner",
@@ -94,54 +88,6 @@ func TestEndpointDedup(t *testing.T) {
 				},
 			},
 			[]string{"etcd2.example.com:2379", "etcd3.example.com:2379"},
-		},
-	}
-
-	for _, testcase := range testcases {
-		t.Run(testcase.name, func(t *testing.T) {
-			fakeClient.memberListResp = testcase.returnedMemberList
-			ep, err := endpointsFromCluster(globalConfig{endpoints: []string{"https://localhost:2379"}})
-			if err != nil {
-				t.Error(err)
-			}
-
-			if !slices.Equal(testcase.expectedEndpoints, ep) {
-				t.Errorf("endpoints didn't match. Expected %v got %v", testcase.expectedEndpoints, ep)
-			}
-		})
-	}
-}
-
-func TestEndpointExcludeLocalhost(t *testing.T) {
-	oldCreateClient := createClient
-	t.Cleanup(func() {
-		createClient = oldCreateClient
-	})
-
-	fakeClient := fakeClientURLClient{}
-	createClient = func(cfgSpec *clientv3.ConfigSpec) (EtcdCluster, error) {
-		return &fakeClient, nil
-	}
-
-	testcases := []struct {
-		name               string
-		returnedMemberList *clientv3.MemberListResponse
-		expectedEndpoints  []string
-		excludeLocalhost   bool
-	}{
-		{
-			"normal",
-			&clientv3.MemberListResponse{
-				Members: []*etcdserverpb.Member{
-					{
-						ClientURLs: []string{"etcd2.example.com:2379", "127.0.0.1:2379"},
-					},
-					{
-						ClientURLs: []string{"etcd3.example.com:2379"},
-					},
-				},
-			},
-			[]string{"127.0.0.1:2379", "etcd2.example.com:2379", "etcd3.example.com:2379"},
 			false,
 		},
 		{
@@ -163,8 +109,12 @@ func TestEndpointExcludeLocalhost(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			fakeClient.memberListResp = testcase.returnedMemberList
-			ep, err := endpointsFromCluster(globalConfig{endpoints: []string{"https://localhost:2379"}, excludeLocalhost: testcase.excludeLocalhost})
+			mgr := NewManager(&config.GlobalConfig{
+				Endpoints:        []string{"https://localhost:2379"},
+				ExcludeLocalhost: testcase.excludeLocalhost,
+			})
+
+			ep, err := mgr.extractEndpoints(testcase.returnedMemberList)
 			if err != nil {
 				t.Error(err)
 			}
@@ -176,21 +126,7 @@ func TestEndpointExcludeLocalhost(t *testing.T) {
 	}
 }
 
-type fakeClientURLClient struct {
-	*clientv3.Client
-	memberListResp *clientv3.MemberListResponse
-}
-
-// MemberList lists the current cluster membership.
-func (f fakeClientURLClient) MemberList(ctx context.Context, opts ...clientv3.OpOption) (*clientv3.MemberListResponse, error) {
-	return f.memberListResp, nil
-}
-
-func (fakeClientURLClient) Close() error {
-	return nil
-}
-
-func TestIsLocalEp(t *testing.T) {
+func TestIsLocalEndpoint(t *testing.T) {
 	testcases := []struct {
 		name   string
 		ep     string
@@ -267,7 +203,7 @@ func TestIsLocalEp(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			if ok, err := isLocalEndpoint(testcase.ep); err != testcase.err || ok != testcase.desire {
+			if ok, err := IsLocalEndpoint(testcase.ep); err != testcase.err || ok != testcase.desire {
 				t.Errorf("expected %v, got err: %v result: %v", testcase.desire, err, ok)
 			}
 		})
