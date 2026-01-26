@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: goversion
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v3.5.2
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v3.5.2
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version: ${{ needs.goversion.outputs.goversion }}
