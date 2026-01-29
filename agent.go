@@ -11,10 +11,12 @@ import (
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"go.etcd.io/etcd/client/pkg/v3/logutil"
 	clientv3 "go.etcd.io/etcd/client/v3"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
-func memberList(gcfg globalConfig) (*clientv3.MemberListResponse, error) {
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+func memberList(gcfg config.GlobalConfig) (*clientv3.MemberListResponse, error) {
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	eps, err := endpointsFromCmd(gcfg)
 	if err != nil {
 		return nil, err
@@ -26,7 +28,7 @@ func memberList(gcfg globalConfig) (*clientv3.MemberListResponse, error) {
 		return nil, err
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()
@@ -51,13 +53,13 @@ func (eh epHealth) String() string {
 	return fmt.Sprintf("endpoint: %s, health: %t, took: %s, error: %s", eh.Ep, eh.Health, eh.Took, eh.Error)
 }
 
-func clusterHealth(gcfg globalConfig) ([]epHealth, error) {
+func clusterHealth(gcfg config.GlobalConfig) ([]epHealth, error) {
 	var (
 		eps []string
 		err error
 	)
 
-	if gcfg.skipHealthcheckClusterEndpoints {
+	if gcfg.SkipHealthcheckClusterEndpoints {
 		eps, err = endpoints(gcfg)
 	} else {
 		eps, err = endpointsFromCluster(gcfg)
@@ -71,7 +73,7 @@ func clusterHealth(gcfg globalConfig) ([]epHealth, error) {
 		return nil, err
 	}
 
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	var cfgs []*clientv3.Config
 	for _, ep := range eps {
 		cfg, err := clientv3.NewClientConfig(&clientv3.ConfigSpec{
@@ -106,7 +108,7 @@ func clusterHealth(gcfg globalConfig) ([]epHealth, error) {
 			startTS := time.Now()
 			// get a random key. As long as we can get the response
 			// without an error, the endpoint is health.
-			ctx, cancel := commandCtx(gcfg.commandTimeout)
+			ctx, cancel := commandCtx(gcfg.CommandTimeout)
 			_, err = cli.Get(ctx, "health")
 			eh := epHealth{Ep: ep, Health: false, Took: time.Since(startTS).String()}
 			if err == nil || err == rpctypes.ErrPermissionDenied {
@@ -163,7 +165,7 @@ func (es epStatus) String() string {
 		es.Ep, es.Resp.DbSize, es.Resp.DbSizeInUse, es.Resp.Header.MemberId, es.Resp.Leader, es.Resp.Header.Revision, es.Resp.RaftTerm, es.Resp.RaftIndex)
 }
 
-func membersStatus(gcfg globalConfig) ([]epStatus, error) {
+func membersStatus(gcfg config.GlobalConfig) ([]epStatus, error) {
 	eps, err := endpoints(gcfg)
 	if err != nil {
 		return nil, err
@@ -181,15 +183,15 @@ func membersStatus(gcfg globalConfig) ([]epStatus, error) {
 	return statusList, nil
 }
 
-func memberStatus(gcfg globalConfig, ep string) (epStatus, error) {
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+func memberStatus(gcfg config.GlobalConfig, ep string) (epStatus, error) {
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	cfgSpec.Endpoints = []string{ep}
 	c, err := createClient(cfgSpec)
 	if err != nil {
 		return epStatus{}, fmt.Errorf("failed to createClient: %w", err)
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()
@@ -199,15 +201,15 @@ func memberStatus(gcfg globalConfig, ep string) (epStatus, error) {
 	return epStatus{Ep: ep, Resp: resp}, err
 }
 
-func compact(gcfg globalConfig, rev int64, ep string) error {
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+func compact(gcfg config.GlobalConfig, rev int64, ep string) error {
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	cfgSpec.Endpoints = []string{ep}
 	c, err := createClient(cfgSpec)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()
@@ -217,15 +219,15 @@ func compact(gcfg globalConfig, rev int64, ep string) error {
 	return err
 }
 
-func defragment(gcfg globalConfig, ep string) error {
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+func defragment(gcfg config.GlobalConfig, ep string) error {
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	cfgSpec.Endpoints = []string{ep}
 	c, err := createClient(cfgSpec)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()
@@ -235,15 +237,15 @@ func defragment(gcfg globalConfig, ep string) error {
 	return err
 }
 
-func transferLeadership(gcfg globalConfig, leaderEp string, transfereeID uint64) error {
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+func transferLeadership(gcfg config.GlobalConfig, leaderEp string, transfereeID uint64) error {
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	cfgSpec.Endpoints = []string{leaderEp}
 	c, err := createClient(cfgSpec)
 	if err != nil {
 		return fmt.Errorf("failed to create client for leader endpoint %s: %w", leaderEp, err)
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()
@@ -258,20 +260,20 @@ func transferLeadership(gcfg globalConfig, leaderEp string, transfereeID uint64)
 }
 
 // noSpaceAlarms gets all NOSPACE alarms from the cluster
-func noSpaceAlarms(gcfg globalConfig) ([]*etcdserverpb.AlarmMember, error) {
+func noSpaceAlarms(gcfg config.GlobalConfig) ([]*etcdserverpb.AlarmMember, error) {
 	eps, err := endpoints(gcfg)
 	if err != nil {
 		return nil, err
 	}
 
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	cfgSpec.Endpoints = eps
 	c, err := createClient(cfgSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()
@@ -293,7 +295,7 @@ func noSpaceAlarms(gcfg globalConfig) ([]*etcdserverpb.AlarmMember, error) {
 }
 
 // disAlarmNoSpaceAlarms disalarms the provided NOSPACE alarms
-func disAlarmNoSpaceAlarms(gcfg globalConfig, nospaceAlarms []*etcdserverpb.AlarmMember) error {
+func disAlarmNoSpaceAlarms(gcfg config.GlobalConfig, nospaceAlarms []*etcdserverpb.AlarmMember) error {
 	if len(nospaceAlarms) == 0 {
 		return nil // No NOSPACE alarms to disalarm
 	}
@@ -303,14 +305,14 @@ func disAlarmNoSpaceAlarms(gcfg globalConfig, nospaceAlarms []*etcdserverpb.Alar
 		return err
 	}
 
-	cfgSpec := clientConfigWithoutEndpoints(gcfg)
+	cfgSpec := gcfg.ClientConfigWithoutEndpoints()
 	cfgSpec.Endpoints = eps
 	c, err := createClient(cfgSpec)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := commandCtx(gcfg.commandTimeout)
+	ctx, cancel := commandCtx(gcfg.CommandTimeout)
 	defer func() {
 		c.Close()
 		cancel()

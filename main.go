@@ -1,20 +1,21 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
+	"github.com/ahrtr/etcd-defrag/pkg/version"
 )
 
 var (
-	globalCfg = globalConfig{}
+	globalCfg = config.GlobalConfig{}
 )
 
 func newDefragCommand() *cobra.Command {
@@ -27,87 +28,10 @@ func newDefragCommand() *cobra.Command {
 		Run: defragCommandFunc,
 	}
 
-	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	viper.SetEnvPrefix("ETCD_DEFRAG")
-	viper.AutomaticEnv()
-	setDefaults()
-
-	// Manually splitting, because GetStringSlice has inconsistent behavior for splitting command line flags and environment variables
-	// https://github.com/spf13/viper/issues/380
-	defragCmd.Flags().StringSliceVar(&globalCfg.endpoints, "endpoints", strings.Split(viper.GetString("endpoints"), ","), "comma separated etcd endpoints")
-
-	defragCmd.Flags().BoolVar(&globalCfg.useClusterEndpoints, "cluster", viper.GetBool("cluster"), "use all endpoints from the cluster member list")
-	defragCmd.Flags().BoolVar(&globalCfg.excludeLocalhost, "exclude-localhost", viper.GetBool("exclude-localhost"), "whether to exclude localhost endpoints")
-	defragCmd.Flags().BoolVar(&globalCfg.moveLeader, "move-leader", viper.GetBool("move-leader"), "whether to move the leadership before performing defragmentation on the leader")
-	defragCmd.Flags().DurationVar(&globalCfg.waitPeriod, "wait-between-defrags", viper.GetDuration("wait-period"), "wait time between consecutive defragmentation runs or after a leader movement (if --move-leader is enabled). Defaults to 0s (no wait)")
-
-	defragCmd.Flags().DurationVar(&globalCfg.dialTimeout, "dial-timeout", viper.GetDuration("dial-timeout"), "dial timeout for client connections")
-	defragCmd.Flags().DurationVar(&globalCfg.commandTimeout, "command-timeout", viper.GetDuration("command-timeout"), "command timeout (excluding dial timeout)")
-	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTime, "keepalive-time", viper.GetDuration("keepalive-time"), "keepalive time for client connections")
-	defragCmd.Flags().DurationVar(&globalCfg.keepAliveTimeout, "keepalive-timeout", viper.GetDuration("keepalive-timeout"), "keepalive timeout for client connections")
-
-	defragCmd.Flags().BoolVar(&globalCfg.insecure, "insecure-transport", viper.GetBool("insecure-transport"), "disable transport security for client connections")
-
-	defragCmd.Flags().BoolVar(&globalCfg.insecureSkepVerify, "insecure-skip-tls-verify", viper.GetBool("insecure-skip-tls-verify"), "skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)")
-	defragCmd.Flags().StringVar(&globalCfg.certFile, "cert", viper.GetString("cert"), "identify secure client using this TLS certificate file")
-	defragCmd.Flags().StringVar(&globalCfg.keyFile, "key", viper.GetString("key"), "identify secure client using this TLS key file")
-	defragCmd.Flags().StringVar(&globalCfg.caFile, "cacert", viper.GetString("cacert"), "verify certificates of TLS-enabled secure servers using this CA bundle")
-
-	defragCmd.Flags().StringVar(&globalCfg.username, "user", viper.GetString("user"), "username[:password] for authentication (prompt if password is not supplied)")
-	defragCmd.Flags().StringVar(&globalCfg.password, "password", viper.GetString("password"), "password for authentication (if this option is used, --user option shouldn't include password)")
-
-	defragCmd.Flags().StringVarP(&globalCfg.dnsDomain, "discovery-srv", "d", viper.GetString("discovery-srv"), "domain name to query for SRV records describing cluster endpoints")
-	defragCmd.Flags().StringVarP(&globalCfg.dnsService, "discovery-srv-name", "", viper.GetString("discovery-srv-name"), "service name to query when using DNS discovery")
-	defragCmd.Flags().BoolVar(&globalCfg.insecureDiscovery, "insecure-discovery", viper.GetBool("insecure-discovery"), "accept insecure SRV records describing cluster endpoints")
-
-	defragCmd.Flags().BoolVar(&globalCfg.compaction, "compaction", viper.GetBool("compaction"), "whether execute compaction before the defragmentation (defaults to true)")
-
-	defragCmd.Flags().BoolVar(&globalCfg.continueOnError, "continue-on-error", viper.GetBool("continue-on-error"), "whether continue to defragment next endpoint if current one fails")
-
-	defragCmd.Flags().IntVar(&globalCfg.dbQuotaBytes, "etcd-storage-quota-bytes", viper.GetInt("etcd-storage-quota-bytes"), "etcd storage quota in bytes (the value passed to etcd instance by flag --quota-backend-bytes)")
-	defragCmd.Flags().StringVar(&globalCfg.defragRule, "defrag-rule", viper.GetString("defrag-rule"), "defragmentation rule (etcd-defrag will run defragmentation if the rule is empty or it is evaluated to true)")
-
-	defragCmd.Flags().BoolVar(&globalCfg.printVersion, "version", viper.GetBool("version"), "print the version and exit")
-
-	defragCmd.Flags().BoolVar(&globalCfg.dryRun, "dry-run", viper.GetBool("dry-run"), "evaluate whether or not endpoints require defragmentation, but don't actually perform it")
-
-	defragCmd.Flags().BoolVar(&globalCfg.skipHealthcheckClusterEndpoints, "skip-healthcheck-cluster-endpoints", viper.GetBool("skip-healthcheck-cluster-endpoints"), "skip cluster endpoint discovery during health check and only check the endpoints provided via --endpoints")
-
-	defragCmd.Flags().BoolVar(&globalCfg.autoDisalarm, "auto-disalarm", viper.GetBool("auto-disalarm"), "whether automatically disalarm NOSPACE alarms after successful defragmentation，defaults to false")
-	defragCmd.Flags().Float64Var(&globalCfg.disalarmThreshold, "disalarm-threshold", viper.GetFloat64("disalarm-threshold"), "Threshold ratio for automatic alarm clearing (db size / quota). Valid range: 0 < x < 1 (default: 0.9)")
+	config.SetupViper()
+	config.RegisterFlags(defragCmd, &globalCfg)
 
 	return defragCmd
-}
-
-func setDefaults() {
-	viper.SetDefault("endpoints", "127.0.0.1:2379")
-	viper.SetDefault("cluster", false)
-	viper.SetDefault("exclude-localhost", false)
-	viper.SetDefault("move-leader", false)
-	viper.SetDefault("wait-period", 0*time.Second)
-	viper.SetDefault("dial-timeout", 2*time.Second)
-	viper.SetDefault("command-timeout", 30*time.Second)
-	viper.SetDefault("keepalive-time", 2*time.Second)
-	viper.SetDefault("keepalive-timeout", 6*time.Second)
-	viper.SetDefault("insecure-transport", true)
-	viper.SetDefault("insecure-skip-tls-verify", false)
-	viper.SetDefault("cert", "")
-	viper.SetDefault("key", "")
-	viper.SetDefault("cacert", "")
-	viper.SetDefault("user", "")
-	viper.SetDefault("password", "")
-	viper.SetDefault("discovery-srv", "")
-	viper.SetDefault("discovery-srv-name", "")
-	viper.SetDefault("insecure-discovery", true)
-	viper.SetDefault("compaction", true)
-	viper.SetDefault("continue-on-error", true)
-	viper.SetDefault("etcd-storage-quota-bytes", 2*1024*1024*1024)
-	viper.SetDefault("defrag-rule", "")
-	viper.SetDefault("version", false)
-	viper.SetDefault("dry-run", false)
-	viper.SetDefault("skip-healthcheck-cluster-endpoints", false)
-	viper.SetDefault("auto-disalarm", false)
-	viper.SetDefault("disalarm-threshold", 0.9)
 }
 
 func main() {
@@ -124,8 +48,8 @@ func main() {
 
 func printVersion(printVersion bool) {
 	if printVersion {
-		fmt.Printf("etcd-defrag Version: %s\n", Version)
-		fmt.Printf("Git SHA: %s\n", GitSHA)
+		fmt.Printf("etcd-defrag Version: %s\n", version.Version)
+		fmt.Printf("Git SHA: %s\n", version.GitSHA)
 		fmt.Printf("Go Version: %s\n", runtime.Version())
 		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
@@ -133,16 +57,29 @@ func printVersion(printVersion bool) {
 }
 
 func defragCommandFunc(cmd *cobra.Command, args []string) {
-	printVersion(globalCfg.printVersion)
+	printVersion(globalCfg.PrintVersion)
 
-	if globalCfg.dryRun {
+	if globalCfg.DryRun {
 		log.Println("Using dry run mode, will not perform defragmentation")
 	}
 
 	log.Println("Validating configuration.")
-	if err := validateConfig(cmd, globalCfg); err != nil {
+	if err := globalCfg.Validate(cmd); err != nil {
 		log.Printf("Validating configuration failed: %v\n", err)
 		os.Exit(1)
+	}
+
+	if len(globalCfg.DefragRule) > 0 {
+		log.Printf("Validating the defragmentation rule: %v ... ", globalCfg.DefragRule)
+
+		if err := validateRule(globalCfg.DefragRule); err != nil {
+			log.Println("invalid")
+			log.Printf("Validating configuration failed: invalid rule %q, error: %v\n", globalCfg.DefragRule, err)
+			os.Exit(1)
+		}
+		log.Println("valid")
+	} else {
+		log.Println("No defragmentation rule provided")
 	}
 
 	log.Println("Performing health check.")
@@ -163,7 +100,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if globalCfg.compaction && !globalCfg.dryRun {
+	if globalCfg.Compaction && !globalCfg.DryRun {
 		log.Printf("Running compaction until revision: %d ... ", statusList[0].Resp.Header.Revision)
 		if err := compact(globalCfg, statusList[0].Resp.Header.Revision, eps[0]); err != nil {
 			log.Printf("failed, %v\n", err)
@@ -182,7 +119,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		if err != nil {
 			failures++
 			log.Printf("Failed to get member (%q) status, error: %v\n", ep, err)
-			if !globalCfg.continueOnError {
+			if !globalCfg.ContinueOnError {
 				break
 			}
 			continue
@@ -193,7 +130,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 			if err != nil {
 				failures++
 				log.Printf("Evaluation failed, endpoint: %s, error:%v\n", ep, err)
-				if !globalCfg.continueOnError {
+				if !globalCfg.ContinueOnError {
 					break
 				}
 				continue
@@ -202,25 +139,25 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if globalCfg.dryRun {
+		if globalCfg.DryRun {
 			log.Printf("[Dry run] skip defragmenting endpoint %q\n", ep)
 			continue
 		}
 
 		// Check if the member is a leader and move the leader if necessary
-		if globalCfg.moveLeader {
+		if globalCfg.MoveLeader {
 			if status.Resp.Leader == status.Resp.Header.MemberId {
 				log.Println("Transferring the leadership from the current leader")
 				if err = moveLeader(globalCfg, status.Resp.Leader, ep); err != nil {
 					log.Printf("Failed to transfer the leadership from %x to a follower, error: %v\n", status.Resp.Leader, err)
-					if !globalCfg.continueOnError {
+					if !globalCfg.ContinueOnError {
 						break
 					}
 					continue
 				}
-				if globalCfg.waitPeriod > 0 {
-					log.Printf("Transferred the leadership successfully! Waiting for %s for next operation\n", globalCfg.waitPeriod.String())
-					time.Sleep(globalCfg.waitPeriod)
+				if globalCfg.WaitBetweenDefrags > 0 {
+					log.Printf("Transferred the leadership successfully! Waiting for %s for next operation\n", globalCfg.WaitBetweenDefrags.String())
+					time.Sleep(globalCfg.WaitBetweenDefrags)
 				}
 			}
 		}
@@ -232,7 +169,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		if err != nil {
 			failures++
 			log.Printf("Failed to defragment etcd member %q. took %s. (%v)\n", ep, d.String(), err)
-			if !globalCfg.continueOnError {
+			if !globalCfg.ContinueOnError {
 				break
 			}
 			continue
@@ -245,15 +182,15 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 		if err != nil {
 			failures++
 			log.Printf("Failed to get member (%q) status, error: %v\n", ep, err)
-			if !globalCfg.continueOnError {
+			if !globalCfg.ContinueOnError {
 				break
 			}
 			continue
 		}
 
-		if globalCfg.waitPeriod > 0 && index < len(eps)-1 {
-			log.Printf("Waiting for %s for next operation\n", globalCfg.waitPeriod.String())
-			time.Sleep(globalCfg.waitPeriod)
+		if globalCfg.WaitBetweenDefrags > 0 && index < len(eps)-1 {
+			log.Printf("Waiting for %s for next operation\n", globalCfg.WaitBetweenDefrags.String())
+			time.Sleep(globalCfg.WaitBetweenDefrags)
 		}
 	}
 	if failures != 0 {
@@ -263,7 +200,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	log.Println("The defragmentation is successful.")
 
 	// Perform auto-disalarm if enabled and not in dry-run mode
-	if !globalCfg.dryRun && globalCfg.autoDisalarm {
+	if !globalCfg.DryRun && globalCfg.AutoDisalarm {
 		log.Println("Start auto-disalarm")
 		// Get updated status after defragmentation
 		updatedStatusList, err := getMembersStatus(globalCfg)
@@ -277,57 +214,9 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	}
 }
 
-func validateConfig(cmd *cobra.Command, gcfg globalConfig) error {
-	if gcfg.certFile == "" && cmd.Flags().Changed("cert") {
-		return errors.New("empty string is passed to --cert option")
-	}
-
-	if gcfg.keyFile == "" && cmd.Flags().Changed("key") {
-		return errors.New("empty string is passed to --key option")
-	}
-
-	if gcfg.caFile == "" && cmd.Flags().Changed("cacert") {
-		return errors.New("empty string is passed to --cacert option")
-	}
-
-	if len(gcfg.defragRule) > 0 {
-		log.Printf("Validating the defragmentation rule: %v ... ", gcfg.defragRule)
-
-		if err := validateRule(gcfg.defragRule); err != nil {
-			log.Println("invalid")
-			return fmt.Errorf("invalid rule %q, error: %w", gcfg.defragRule, err)
-		}
-		log.Println("valid")
-	} else {
-		log.Println("No defragmentation rule provided")
-	}
-
-	if gcfg.skipHealthcheckClusterEndpoints && len(gcfg.endpoints) == 0 {
-		return errors.New("--skip-healthcheck-cluster-endpoints requires explicit endpoints to be provided via --endpoints flag")
-	}
-
-	if gcfg.skipHealthcheckClusterEndpoints && gcfg.useClusterEndpoints {
-		return errors.New("--skip-healthcheck-cluster-endpoints and --cluster flags are mutually exclusive")
-	}
-
-	if gcfg.skipHealthcheckClusterEndpoints && gcfg.dnsDomain != "" {
-		return errors.New("--skip-healthcheck-cluster-endpoints and --discovery-srv flags are mutually exclusive")
-	}
-
-	if gcfg.autoDisalarm && (gcfg.disalarmThreshold <= 0 || gcfg.disalarmThreshold >= 1) {
-		return errors.New("--disalarm-threshold must be greater than 0 and less than 1.0 when --auto-disalarm is enabled")
-	}
-
-	if gcfg.disalarmThreshold != 0 && !gcfg.autoDisalarm {
-		log.Println("Warning: --disalarm-threshold is set but --auto-disalarm is disabled, threshold will be ignored")
-	}
-
-	return nil
-}
-
-func healthCheck(gcfg globalConfig) bool {
-	if gcfg.skipHealthcheckClusterEndpoints {
-		log.Printf("Health check will be performed only on the explicitly provided endpoints: %v\n", gcfg.endpoints)
+func healthCheck(gcfg config.GlobalConfig) bool {
+	if gcfg.SkipHealthcheckClusterEndpoints {
+		log.Printf("Health check will be performed only on the explicitly provided endpoints: %v\n", gcfg.Endpoints)
 	} else {
 		log.Println("Health check will be performed on all cluster member endpoints")
 	}
@@ -350,7 +239,7 @@ func healthCheck(gcfg globalConfig) bool {
 	return unhealthyCount == 0
 }
 
-func getMembersStatus(gcfg globalConfig) ([]epStatus, error) {
+func getMembersStatus(gcfg config.GlobalConfig) ([]epStatus, error) {
 	statusList, err := membersStatus(gcfg)
 	if err != nil {
 		return nil, err
@@ -362,7 +251,7 @@ func getMembersStatus(gcfg globalConfig) ([]epStatus, error) {
 	return statusList, nil
 }
 
-func getMemberStatus(gcfg globalConfig, ep string) (epStatus, error) {
+func getMemberStatus(gcfg config.GlobalConfig, ep string) (epStatus, error) {
 	status, err := memberStatus(gcfg, ep)
 	if err != nil {
 		return epStatus{}, err
@@ -371,7 +260,7 @@ func getMemberStatus(gcfg globalConfig, ep string) (epStatus, error) {
 	return status, nil
 }
 
-func moveLeader(gcfg globalConfig, leaderID uint64, leaderEndpoint string) error {
+func moveLeader(gcfg config.GlobalConfig, leaderID uint64, leaderEndpoint string) error {
 	memberlistResp, err := memberList(gcfg)
 	if err != nil {
 		return fmt.Errorf("failed to get member list: %w", err)

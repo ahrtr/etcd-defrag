@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 func TestEndpointsForHealthCheck_SkipHealthcheckClusterEndpoints(t *testing.T) {
@@ -73,15 +75,15 @@ func TestEndpointsForHealthCheck_SkipHealthcheckClusterEndpoints(t *testing.T) {
 				return fakeClient, nil
 			}
 
-			cfg := globalConfig{
-				skipHealthcheckClusterEndpoints: tc.skipHealthcheckClusterEndpoints,
-				endpoints:                       tc.endpoints,
+			cfg := config.GlobalConfig{
+				SkipHealthcheckClusterEndpoints: tc.skipHealthcheckClusterEndpoints,
+				Endpoints:                       tc.endpoints,
 			}
 
 			var actualEndpoints []string
 			var err error
 
-			if cfg.skipHealthcheckClusterEndpoints {
+			if cfg.SkipHealthcheckClusterEndpoints {
 				actualEndpoints, err = endpointsFromCmd(cfg)
 			} else {
 				actualEndpoints, err = endpointsFromCluster(cfg)
@@ -147,8 +149,8 @@ func TestEndpointsFromCluster_ExcludesLearners(t *testing.T) {
 				return fakeClient, nil
 			}
 
-			cfg := globalConfig{
-				endpoints: []string{"192.168.1.10:2379"},
+			cfg := config.GlobalConfig{
+				Endpoints: []string{"192.168.1.10:2379"},
 			}
 
 			actualEndpoints, err := endpointsFromCluster(cfg)
@@ -161,15 +163,15 @@ func TestEndpointsFromCluster_ExcludesLearners(t *testing.T) {
 func TestCheckAllMembersDBSize(t *testing.T) {
 	testCases := []struct {
 		name        string
-		gcfg        globalConfig
+		gcfg        config.GlobalConfig
 		statusList  []epStatus
 		expectedEps []string
 	}{
 		{
 			name: "all members below threshold",
-			gcfg: globalConfig{
-				dbQuotaBytes:      1000,
-				disalarmThreshold: 0.8,
+			gcfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes: 1000,
+				DisalarmThreshold:     0.8,
 			},
 			statusList: []epStatus{
 				{Ep: "ep1", Resp: &clientv3.StatusResponse{DbSize: 700}},
@@ -180,9 +182,9 @@ func TestCheckAllMembersDBSize(t *testing.T) {
 		},
 		{
 			name: "some members above threshold",
-			gcfg: globalConfig{
-				dbQuotaBytes:      1000,
-				disalarmThreshold: 0.8,
+			gcfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes: 1000,
+				DisalarmThreshold:     0.8,
 			},
 			statusList: []epStatus{
 				{Ep: "ep1", Resp: &clientv3.StatusResponse{DbSize: 900}},
@@ -193,9 +195,9 @@ func TestCheckAllMembersDBSize(t *testing.T) {
 		},
 		{
 			name: "all members above threshold",
-			gcfg: globalConfig{
-				dbQuotaBytes:      1000,
-				disalarmThreshold: 0.5,
+			gcfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes: 1000,
+				DisalarmThreshold:     0.5,
 			},
 			statusList: []epStatus{
 				{Ep: "ep1", Resp: &clientv3.StatusResponse{DbSize: 600}},
@@ -206,18 +208,18 @@ func TestCheckAllMembersDBSize(t *testing.T) {
 		},
 		{
 			name: "empty status list",
-			gcfg: globalConfig{
-				dbQuotaBytes:      1000,
-				disalarmThreshold: 0.8,
+			gcfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes: 1000,
+				DisalarmThreshold:     0.8,
 			},
 			statusList:  []epStatus{},
 			expectedEps: nil,
 		},
 		{
 			name: "zero threshold",
-			gcfg: globalConfig{
-				dbQuotaBytes:      1000,
-				disalarmThreshold: 0.0,
+			gcfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes: 1000,
+				DisalarmThreshold:     0.0,
 			},
 			statusList: []epStatus{
 				{Ep: "ep1", Resp: &clientv3.StatusResponse{DbSize: 100}},
@@ -227,9 +229,9 @@ func TestCheckAllMembersDBSize(t *testing.T) {
 		},
 		{
 			name: "threshold at boundary",
-			gcfg: globalConfig{
-				dbQuotaBytes:      1000,
-				disalarmThreshold: 0.8,
+			gcfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes: 1000,
+				DisalarmThreshold:     0.8,
 			},
 			statusList: []epStatus{
 				{Ep: "ep1", Resp: &clientv3.StatusResponse{DbSize: 800}}, // exactly at threshold

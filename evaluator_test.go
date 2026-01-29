@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 func TestValidateRule(t *testing.T) {
@@ -199,9 +201,9 @@ func TestEvaluate(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			gcfg := globalConfig{
-				defragRule:   tc.rule,
-				dbQuotaBytes: tc.dbQuota,
+			gcfg := config.GlobalConfig{
+				DefragRule:            tc.rule,
+				EtcdStorageQuotaBytes: int64(tc.dbQuota),
 			}
 			es := epStatus{
 				Resp: &clientv3.StatusResponse{

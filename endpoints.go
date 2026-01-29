@@ -9,11 +9,13 @@ import (
 
 	"go.etcd.io/etcd/client/pkg/v3/srv"
 	"golang.org/x/exp/slices"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 var errBadScheme = errors.New("url scheme must be http or https")
 
-func endpointsWithLeaderAtEnd(gcfg globalConfig, statusList []epStatus) ([]string, error) {
+func endpointsWithLeaderAtEnd(gcfg config.GlobalConfig, statusList []epStatus) ([]string, error) {
 	eps, err := endpoints(gcfg)
 	if err != nil || len(eps) <= 1 {
 		return eps, err
@@ -32,8 +34,8 @@ func endpointsWithLeaderAtEnd(gcfg globalConfig, statusList []epStatus) ([]strin
 	return sortedEps, nil
 }
 
-func endpoints(gcfg globalConfig) ([]string, error) {
-	if !gcfg.useClusterEndpoints {
+func endpoints(gcfg config.GlobalConfig) ([]string, error) {
+	if !gcfg.Cluster {
 		return endpointsFromCmd(gcfg)
 	}
 
@@ -75,7 +77,7 @@ func isLocalEndpoint(ep string) (bool, error) {
 	return false, nil
 }
 
-func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
+func endpointsFromCluster(gcfg config.GlobalConfig) ([]string, error) {
 	memberlistResp, err := memberList(gcfg)
 	if err != nil {
 		return nil, err
@@ -87,7 +89,7 @@ func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 		if !m.GetIsLearner() {
 			for _, ep := range m.ClientURLs {
 				// Do not append loopback endpoints when `--exclude-localhost` is set.
-				if gcfg.excludeLocalhost {
+				if gcfg.ExcludeLocalhost {
 					ok, err := isLocalEndpoint(ep)
 					if err != nil {
 						return nil, err
@@ -107,14 +109,14 @@ func endpointsFromCluster(gcfg globalConfig) ([]string, error) {
 	return eps, nil
 }
 
-func endpointsFromCmd(gcfg globalConfig) ([]string, error) {
+func endpointsFromCmd(gcfg config.GlobalConfig) ([]string, error) {
 	eps, err := endpointsFromDNSDiscovery(gcfg)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(eps) == 0 {
-		eps = gcfg.endpoints
+		eps = gcfg.Endpoints
 	}
 
 	if len(eps) == 0 {
@@ -124,18 +126,18 @@ func endpointsFromCmd(gcfg globalConfig) ([]string, error) {
 	return eps, nil
 }
 
-func endpointsFromDNSDiscovery(gcfg globalConfig) ([]string, error) {
-	if gcfg.dnsDomain == "" {
+func endpointsFromDNSDiscovery(gcfg config.GlobalConfig) ([]string, error) {
+	if gcfg.DiscoverySrv == "" {
 		return nil, nil
 	}
 
-	srvs, err := srv.GetClient("etcd-client", gcfg.dnsDomain, gcfg.dnsService)
+	srvs, err := srv.GetClient("etcd-client", gcfg.DiscoverySrv, gcfg.DiscoverySrvName)
 	if err != nil {
 		return nil, err
 	}
 
 	eps := srvs.Endpoints
-	if gcfg.insecureDiscovery {
+	if gcfg.InsecureDiscovery {
 		return eps, nil
 	}
 

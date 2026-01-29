@@ -4,6 +4,8 @@ import (
 	"errors"
 
 	"github.com/maja42/goval"
+
+	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 const (
@@ -25,31 +27,6 @@ func defaultVariables() map[string]interface{} {
 	return variables
 }
 
-func evaluate(gcfg globalConfig, es epStatus) (bool, error) {
-	if len(gcfg.defragRule) == 0 {
-		return true, nil
-	}
-
-	variables := map[string]interface{}{
-		dbQuota:      float64(gcfg.dbQuotaBytes),
-		dbSize:       float64(es.Resp.DbSize),
-		dbSizeInUse:  float64(es.Resp.DbSizeInUse),
-		dbQuotaUsage: float64(es.Resp.DbSize) / float64(gcfg.dbQuotaBytes),
-		dbSizeFree:   float64(es.Resp.DbSize - es.Resp.DbSizeInUse),
-	}
-	eval := goval.NewEvaluator()
-
-	result, err := eval.Evaluate(gcfg.defragRule, variables, nil)
-	if err != nil {
-		return false, err
-	}
-	if _, ok := result.(bool); !ok {
-		return false, errors.New("the rule isn't a boolean expression")
-	}
-
-	return result.(bool), err
-}
-
 func validateRule(rule string) error {
 	if len(rule) == 0 {
 		return nil
@@ -63,4 +40,29 @@ func validateRule(rule string) error {
 		return errors.New("the rule isn't a boolean expression")
 	}
 	return err
+}
+
+func evaluate(gcfg config.GlobalConfig, es epStatus) (bool, error) {
+	if len(gcfg.DefragRule) == 0 {
+		return true, nil
+	}
+
+	variables := map[string]interface{}{
+		dbQuota:      float64(gcfg.EtcdStorageQuotaBytes),
+		dbSize:       float64(es.Resp.DbSize),
+		dbSizeInUse:  float64(es.Resp.DbSizeInUse),
+		dbQuotaUsage: float64(es.Resp.DbSize) / float64(gcfg.EtcdStorageQuotaBytes),
+		dbSizeFree:   float64(es.Resp.DbSize - es.Resp.DbSizeInUse),
+	}
+	eval := goval.NewEvaluator()
+
+	result, err := eval.Evaluate(gcfg.DefragRule, variables, nil)
+	if err != nil {
+		return false, err
+	}
+	if _, ok := result.(bool); !ok {
+		return false, errors.New("the rule isn't a boolean expression")
+	}
+
+	return result.(bool), err
 }
