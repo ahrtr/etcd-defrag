@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ahrtr/etcd-defrag/internal/config"
+	"github.com/ahrtr/etcd-defrag/internal/eval"
 	"github.com/ahrtr/etcd-defrag/pkg/version"
 )
 
@@ -72,7 +73,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 	if len(globalCfg.DefragRule) > 0 {
 		log.Printf("Validating the defragmentation rule: %v ... ", globalCfg.DefragRule)
 
-		if err := validateRule(globalCfg.DefragRule); err != nil {
+		if err := eval.ValidateRule(globalCfg.DefragRule); err != nil {
 			log.Println("invalid")
 			log.Printf("Validating configuration failed: invalid rule %q, error: %v\n", globalCfg.DefragRule, err)
 			os.Exit(1)
@@ -125,7 +126,7 @@ func defragCommandFunc(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		evalRet, err := evaluate(globalCfg, status)
+		evalRet, err := eval.Evaluate(globalCfg.DefragRule, globalCfg.EtcdStorageQuotaBytes, status.Resp.DbSize, status.Resp.DbSizeInUse)
 		if !evalRet || err != nil {
 			if err != nil {
 				failures++
