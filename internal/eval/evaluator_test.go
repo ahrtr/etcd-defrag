@@ -1,11 +1,7 @@
-package main
+package eval
 
 import (
 	"testing"
-
-	clientv3 "go.etcd.io/etcd/client/v3"
-
-	"github.com/ahrtr/etcd-defrag/internal/config"
 )
 
 func TestValidateRule(t *testing.T) {
@@ -63,7 +59,7 @@ func TestValidateRule(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			err := validateRule(tc.rule)
+			err := ValidateRule(tc.rule)
 			if tc.expectError != (err != nil) {
 				t.Errorf("Unexpected result, expected error: %t, got %v", tc.expectError, err)
 			}
@@ -201,17 +197,7 @@ func TestEvaluate(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			gcfg := config.GlobalConfig{
-				DefragRule:            tc.rule,
-				EtcdStorageQuotaBytes: int64(tc.dbQuota),
-			}
-			es := epStatus{
-				Resp: &clientv3.StatusResponse{
-					DbSize:      int64(tc.dbSize),
-					DbSizeInUse: int64(tc.dbSizeInUse),
-				},
-			}
-			ret, err := evaluate(gcfg, es)
+			ret, err := Evaluate(tc.rule, int64(tc.dbQuota), int64(tc.dbSize), int64(tc.dbSizeInUse))
 			if tc.expectError != (err != nil) {
 				t.Fatalf("Unexpected result, expected error: %t, got %v", tc.expectError, err)
 			}
