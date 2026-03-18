@@ -3,7 +3,7 @@
 set -euo pipefail
 
 GIT_SHA=$(git rev-parse --short HEAD || echo "GitNotFound")
-VERSION_SHA="main.GitSHA"
+VERSION_SHA="github.com/ahrtr/etcd-defrag/pkg/version.GitSHA"
 
 # use go env if noset
 GOOS=${GOOS:-$(go env GOOS)}
