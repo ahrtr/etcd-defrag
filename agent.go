@@ -144,7 +144,6 @@ func clusterHealth(gcfg config.GlobalConfig) ([]epHealth, error) {
 					eh.Error = "Unable to fetch the alarm list"
 				}
 			}
-			cancel()
 			healthCh <- eh
 		}(cfg)
 	}
