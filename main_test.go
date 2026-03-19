@@ -20,6 +20,7 @@ func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 		{
 			name: "flag disabled with no endpoints",
 			cfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes:           2 * 1024 * 1024 * 1024,
 				SkipHealthcheckClusterEndpoints: false,
 				Endpoints:                       []string{},
 			},
@@ -28,6 +29,7 @@ func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 		{
 			name: "flag disabled with endpoints",
 			cfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes:           2 * 1024 * 1024 * 1024,
 				SkipHealthcheckClusterEndpoints: false,
 				Endpoints:                       []string{"127.0.0.1:2379"},
 			},
@@ -36,6 +38,7 @@ func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 		{
 			name: "flag enabled with no endpoints",
 			cfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes:           2 * 1024 * 1024 * 1024,
 				SkipHealthcheckClusterEndpoints: true,
 				Endpoints:                       []string{},
 			},
@@ -44,6 +47,7 @@ func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 		{
 			name: "flag enabled with single endpoint",
 			cfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes:           2 * 1024 * 1024 * 1024,
 				SkipHealthcheckClusterEndpoints: true,
 				Endpoints:                       []string{"192.168.1.10:2379"},
 			},
@@ -52,6 +56,7 @@ func TestValidateConfig_SkipHealthcheckClusterEndpoints(t *testing.T) {
 		{
 			name: "flag enabled with multiple endpoints",
 			cfg: config.GlobalConfig{
+				EtcdStorageQuotaBytes:           2 * 1024 * 1024 * 1024,
 				SkipHealthcheckClusterEndpoints: true,
 				Endpoints:                       []string{"192.168.1.10:2379", "192.168.1.11:2379"},
 			},
