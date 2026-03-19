@@ -36,10 +36,13 @@ type GlobalConfig struct {
 	Password string `mapstructure:"password"`
 
 	// Behavior configuration
-	Compaction                      bool          `mapstructure:"compaction"`
-	ContinueOnError                 bool          `mapstructure:"continue-on-error"`
-	DefragRule                      string        `mapstructure:"defrag-rule"`
-	DryRun                          bool          `mapstructure:"dry-run"`
+	Compaction      bool   `mapstructure:"compaction"`
+	ContinueOnError bool   `mapstructure:"continue-on-error"`
+	DefragRule      string `mapstructure:"defrag-rule"`
+	DryRun          bool   `mapstructure:"dry-run"`
+	// TODO: remove this when etcd v3.5 is end of life.
+	// etcd v3.6.0 already added quota into the endpoint status response
+	// in https://github.com/etcd-io/etcd/pull/17877
 	EtcdStorageQuotaBytes           int64         `mapstructure:"etcd-storage-quota-bytes"`
 	ExcludeLocalhost                bool          `mapstructure:"exclude-localhost"`
 	MoveLeader                      bool          `mapstructure:"move-leader"`

@@ -36,5 +36,10 @@ func (c GlobalConfig) Validate(cmd *cobra.Command) error {
 		return errors.New("--disalarm-threshold must be greater than 0 and less than 1.0 when --auto-disalarm is enabled")
 	}
 
+	// to avoid the potential divide-by-zero issue
+	if c.EtcdStorageQuotaBytes == 0 {
+		return errors.New("--etcd-storage-quota must be greater than 0")
+	}
+
 	return nil
 }
