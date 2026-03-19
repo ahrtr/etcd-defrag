@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -35,10 +34,6 @@ func (c GlobalConfig) Validate(cmd *cobra.Command) error {
 
 	if c.AutoDisalarm && (c.DisalarmThreshold <= 0 || c.DisalarmThreshold >= 1) {
 		return errors.New("--disalarm-threshold must be greater than 0 and less than 1.0 when --auto-disalarm is enabled")
-	}
-
-	if c.DisalarmThreshold != 0 && !c.AutoDisalarm {
-		log.Println("Warning: --disalarm-threshold is set but --auto-disalarm is disabled, threshold will be ignored")
 	}
 
 	return nil
