@@ -106,9 +106,13 @@ func clusterHealth(gcfg config.GlobalConfig) ([]epHealth, error) {
 				return
 			}
 			startTS := time.Now()
+			ctx, cancel := commandCtx(gcfg.CommandTimeout)
+			defer func() {
+				cli.Close()
+				cancel()
+			}()
 			// get a random key. As long as we can get the response
 			// without an error, the endpoint is health.
-			ctx, cancel := commandCtx(gcfg.CommandTimeout)
 			_, err = cli.Get(ctx, "health")
 			eh := epHealth{Ep: ep, Health: false, Took: time.Since(startTS).String()}
 			if err == nil || err == rpctypes.ErrPermissionDenied {
