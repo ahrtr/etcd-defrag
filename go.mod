@@ -12,7 +12,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.6.11
 	go.etcd.io/etcd/client/pkg/v3 v3.6.11
 	go.etcd.io/etcd/client/v3 v3.6.11
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 
