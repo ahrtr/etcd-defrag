@@ -2,7 +2,7 @@ module github.com/ahrtr/etcd-defrag
 
 go 1.25.0
 
-toolchain go1.25.11
+toolchain go1.25.12
 
 require (
 	github.com/maja42/goval v1.6.0
