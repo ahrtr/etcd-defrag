@@ -311,6 +311,7 @@ etcd-defrag supports all etcd versions that are currently under official support
 - etcd v3.4.x (end of support in May 2026)
 - etcd v3.5.x
 - etcd v3.6.x
+- etcd v3.7.x
 
 ## Contributing
 Any contribution is welcome!
