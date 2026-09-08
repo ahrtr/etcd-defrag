@@ -1,8 +1,5 @@
 name: Go version setup
 
-env:
-  GO_VERSION: "1.26.7"
-
 on:
   workflow_call:
     outputs:
@@ -16,8 +13,10 @@ jobs:
     outputs:
       goversion: ${{ steps.step1.outputs.goversion }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - id: step1
         run: |
+          GO_VERSION=$(sed -nE 's/^toolchain go([0-9.]+)$/\1/p' go.mod)
           echo "Go Version: $GO_VERSION"
           echo "goversion=$GO_VERSION" >> $GITHUB_OUTPUT
 
